@@ -1,1 +1,1 @@
-"""Tests for task manager."""
+"""Tests for task manager application."""
