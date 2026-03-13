@@ -41,3 +41,15 @@ class Task:
         if not isinstance(other, Task):
             return False
         return self.title == other.title
+
+    def mark_complete(self) -> None:
+        """Mark the task as completed."""
+        self.completed = True
+
+    def mark_incomplete(self) -> None:
+        """Mark the task as incomplete."""
+        self.completed = False
+
+    def toggle_completion(self) -> None:
+        """Toggle the completion status between complete and incomplete."""
+        self.completed = not self.completed

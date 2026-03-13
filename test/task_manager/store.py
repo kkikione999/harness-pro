@@ -51,3 +51,45 @@ class TaskStore:
             if task.title == title:
                 return task
         return None
+
+    def mark_task_complete(self, title: str) -> Optional[Task]:
+        """Find a task by title and mark it as complete.
+
+        Args:
+            title: The title of the task to mark as complete.
+
+        Returns:
+            The Task if found and marked complete, None otherwise.
+        """
+        task = self.get_task(title)
+        if task:
+            task.mark_complete()
+        return task
+
+    def mark_task_incomplete(self, title: str) -> Optional[Task]:
+        """Find a task by title and mark it as incomplete.
+
+        Args:
+            title: The title of the task to mark as incomplete.
+
+        Returns:
+            The Task if found and marked incomplete, None otherwise.
+        """
+        task = self.get_task(title)
+        if task:
+            task.mark_incomplete()
+        return task
+
+    def toggle_task_completion(self, title: str) -> Optional[Task]:
+        """Find a task by title and toggle its completion status.
+
+        Args:
+            title: The title of the task to toggle.
+
+        Returns:
+            The Task if found and toggled, None otherwise.
+        """
+        task = self.get_task(title)
+        if task:
+            task.toggle_completion()
+        return task
