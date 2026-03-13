@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import json
+from pathlib import Path
+
 from task_manager.models import Task
 
 
@@ -45,3 +48,35 @@ class TaskStore:
             The task if found, None otherwise.
         """
         return self._tasks.get(task_id)
+
+    def save_to_file(self, filepath: str) -> None:
+        """Save all tasks to a JSON file.
+
+        Args:
+            filepath: Path to the JSON file.
+        """
+        data = {
+            "tasks": [task.to_dict() for task in self._tasks.values()],
+            "next_id": self._next_id,
+        }
+        Path(filepath).write_text(json.dumps(data, indent=2))
+
+    def load_from_file(self, filepath: str) -> None:
+        """Load tasks from a JSON file.
+
+        Replaces current tasks and updates next_id appropriately.
+        If the file does not exist, the store remains unchanged.
+
+        Args:
+            filepath: Path to the JSON file.
+        """
+        path = Path(filepath)
+        if not path.exists():
+            return
+
+        data = json.loads(path.read_text())
+        self._tasks = {
+            task_data["id"]: Task.from_dict(task_data)
+            for task_data in data["tasks"]
+        }
+        self._next_id = data["next_id"]

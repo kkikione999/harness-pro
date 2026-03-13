@@ -1,5 +1,9 @@
 """Tests for task manager store."""
 
+import json
+import tempfile
+from pathlib import Path
+
 import pytest
 
 from task_manager.models import Task
@@ -90,3 +94,114 @@ class TestTaskStore:
 
         assert store1.list_tasks() == [task1]
         assert store2.list_tasks() == [task2]
+
+
+class TestTaskStorePersistence:
+    """Tests for TaskStore persistence methods."""
+
+    def test_save_to_file_creates_valid_json_file(self):
+        """Test that save_to_file creates a valid JSON file."""
+        store = TaskStore()
+        store.add_task("Buy groceries")
+        store.add_task("Walk the dog")
+
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+            filepath = f.name
+
+        try:
+            store.save_to_file(filepath)
+
+            assert Path(filepath).exists()
+            content = Path(filepath).read_text()
+            data = json.loads(content)
+
+            assert "tasks" in data
+            assert "next_id" in data
+            assert len(data["tasks"]) == 2
+            assert data["next_id"] == 3
+        finally:
+            Path(filepath).unlink(missing_ok=True)
+
+    def test_load_from_file_restores_tasks_correctly(self):
+        """Test that load_from_file restores tasks from JSON file."""
+        store = TaskStore()
+        store.add_task("Task 1")
+        store.add_task("Task 2")
+
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+            filepath = f.name
+
+        try:
+            store.save_to_file(filepath)
+
+            new_store = TaskStore()
+            new_store.load_from_file(filepath)
+
+            tasks = new_store.list_tasks()
+            assert len(tasks) == 2
+            titles = [t.title for t in tasks]
+            assert "Task 1" in titles
+            assert "Task 2" in titles
+        finally:
+            Path(filepath).unlink(missing_ok=True)
+
+    def test_round_trip_save_load_preserves_data(self):
+        """Test that save then load preserves all task data."""
+        store = TaskStore()
+        task1 = store.add_task("First task")
+        task2 = store.add_task("Second task")
+
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+            filepath = f.name
+
+        try:
+            store.save_to_file(filepath)
+
+            new_store = TaskStore()
+            new_store.load_from_file(filepath)
+
+            restored_task1 = new_store.get_task(1)
+            assert restored_task1 is not None
+            assert restored_task1.title == "First task"
+            assert restored_task1.completed is False
+
+            restored_task2 = new_store.get_task(2)
+            assert restored_task2 is not None
+            assert restored_task2.title == "Second task"
+        finally:
+            Path(filepath).unlink(missing_ok=True)
+
+    def test_load_from_file_handles_nonexistent_file_gracefully(self):
+        """Test that load_from_file handles non-existent file without error."""
+        store = TaskStore()
+        store.add_task("Existing task")
+
+        nonexistent_path = "/nonexistent/path/file.json"
+        store.load_from_file(nonexistent_path)
+
+        # Store should remain unchanged
+        tasks = store.list_tasks()
+        assert len(tasks) == 1
+        assert tasks[0].title == "Existing task"
+
+    def test_load_from_file_preserves_next_id(self):
+        """Test that load_from_file restores next_id for correct ID sequencing."""
+        store = TaskStore()
+        store.add_task("Task 1")
+        store.add_task("Task 2")
+        # next_id should be 3
+
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+            filepath = f.name
+
+        try:
+            store.save_to_file(filepath)
+
+            new_store = TaskStore()
+            new_store.load_from_file(filepath)
+
+            # New task should get ID 3
+            new_task = new_store.add_task("Task 3")
+            assert new_task.id == 3
+        finally:
+            Path(filepath).unlink(missing_ok=True)
