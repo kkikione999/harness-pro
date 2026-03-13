@@ -49,22 +49,43 @@ Task 006: Test expansion and cleanup
 
 ## Current Status
 
-- Phase: Task 002 being executed
+- Phase: Task 003 being executed
 - Active Workers: 1
-- Last Completed: Task 001
-- Currently Running: Task 002
-- Next Tasks to Schedule: Task 003 (Waiting for Task 002)
+- Last Completed: Task 002
+- Currently Running: Task 003
+- Next Tasks to Schedule: Task 004 (Waiting for Task 003)
 
 ## Task Status Details
 
 | Task ID | Name | Status | Dependencies | Worker | PR |
 |---------|------|--------|--------------|--------|-----|
 | Task 001 | Project Scaffold and Core Task Model | Merged | None | harness-pro-worker | Merged |
-| Task 002 | TaskStore with add, list, and get functionality | Running | Task 001 | harness-pro-worker | Under Review |
-| Task 003 | Task completion marking functionality | Pending | Task 002 | - | - |
+| Task 002 | TaskStore with add, list, and get functionality | Merged | Task 001 | Main Agent | Merged |
+| Task 003 | Task completion marking functionality | Ready | Task 002 | - | - |
 | Task 004 | JSON persistence (save/load) | Pending | Task 003 | - | - |
 | Task 005 | Duplicate title validation | Pending | Task 003 | - | - |
 | Task 006 | Test expansion and cleanup | Pending | Task 004, Task 005 | - | - |
+
+## Completed Tasks
+
+### Task 001: Project Scaffold and Core Task Model ✓
+- Status: Merged (Commit: 05d4c89)
+- Worker: harness-pro-worker
+- Results:
+  - Task class implemented with title, description, and completed status
+  - 26 comprehensive tests, all passing
+  - 100% test coverage
+  - Clean implementation with type validation
+
+### Task 002: TaskStore with add, list, and get functionality ✓
+- Status: Merged (Commit: 16bc0c6)
+- Worker: Main Agent (resolved implementation issues)
+- Results:
+  - TaskStore class with add_task, list_tasks, and get_task methods
+  - 22 comprehensive tests for TaskStore functionality
+  - All 48 tests passing (26 Task tests + 22 TaskStore tests)
+  - Proper type validation, error handling, and return copy guarantees
+  - Maintain insertion order and independence between stores
 
 ## Completed Tasks
 
