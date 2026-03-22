@@ -14,7 +14,7 @@ Use this skill when:
 - AgentTeam should be used for coordinated multi-agent execution
 - a fixed reusable worker team should be used rather than creating new workers repeatedly
 - isolated git worktrees should be used
-- workers must execute under a separate worker agent contract such as `harness-pro-worker`
+- workers must execute under the `harness-pro-worker` agent contract
 - the Main Agent must coordinate planning, dispatch, review, scheduling, and rescheduling without directly implementing worker-owned code or taking over worker-owned merge execution
 
 Do not use this skill for:
@@ -28,6 +28,18 @@ Do not use this skill for:
 ## Core role
 The Main Agent owns orchestration, not implementation.
 
+### What the Main Agent is permitted to do
+
+**The Main Agent's write authority is strictly limited to the `docs/` directory.**
+
+The Main Agent may create or modify only:
+- `docs/design/` — architecture and design documents
+- `docs/tasks/` — worker task documents
+- `docs/review/` — review notes and outcomes
+- `docs/plan/` — project planning and task graph records
+
+**The Main Agent has no authority to write, edit, or delete any file outside `docs/`.** This includes source code, test code, configuration files, scripts, fixtures, CI definitions, and any other repository content. Attempting to do so is a boundary violation regardless of how small or urgent the change appears. If code or tests need to change, a fix task must be written and dispatched to a worker.
+
 The Main Agent is responsible for:
 - defining the project structure at the right level for the current stage
 - writing design and planning documents
@@ -35,10 +47,12 @@ The Main Agent is responsible for:
 - maintaining the live task graph
 - deciding dependencies and safe sequencing
 - dispatching worker agents through AgentTeam
-- monitoring repository-side progress
-- reviewing completed worker outputs
+- monitoring repository-side progress **and** listening for structured worker completion reports
+- reviewing completed worker outputs including self-review summaries and validation evidence
 - recording review outcomes
-- tracking worker-owned merge completion
+- tracking worker-owned merge completion via worker completion reports
+- **dispatching test tasks after every implementation phase completes**
+- **dispatching fix tasks for every issue found during testing, repeating until all tests pass**
 - continuously rescheduling newly unlocked work
 - keeping the fixed worker team continuously utilized
 
@@ -49,11 +63,13 @@ The Main Agent must decompose implementation so that each worker-owned job usual
 Smaller, tightly scoped worker tasks are preferred over broad tasks, even when that increases the number of task transitions over time.
 
 The Main Agent also must preserve ownership boundaries:
-- workers own execution
+- workers own execution of all code and tests — the Main Agent never touches code
 - workers own branch/worktree maintenance
+- workers own self-review (Validation Gate + Self-Review Gate)
 - workers own review-response iteration
-- workers own final merge execution
-- the Main Agent owns orchestration, review judgment, task-state management, worker reuse, and escalation
+- workers own final squash merge execution
+- workers own completion reporting back to the Main Agent
+- the Main Agent owns only: `docs/` content, orchestration, review judgment, task-state management, worker reuse, and escalation
 
 The Main Agent must also use demand-driven task creation.
 
@@ -74,6 +90,59 @@ Valid task types include:
 - review-response revisions
 - focused fixes
 - merge-verification work
+
+---
+
+## Worker execution contract
+Every dispatched worker operates under the `harness-pro-worker` contract.
+
+The Main Agent must understand and rely on the worker's full execution lifecycle:
+
+```
+Worker Lifecycle:
+1. Read Contract (task document)
+2. Work in Isolation (git worktree)
+3. Implement + Test
+4. Validation Gate      ← tests + lint + arch-check must all pass
+5. Self-Review Gate     ← structured self-review checklist must fully pass
+6. PR Submission        ← includes self-review summary in PR description
+7. PR Feedback Loop     (if needed)
+8. Squash Merge         ← squash merge only, no merge commits
+9. Report to Main Agent ← structured completion report, mandatory
+```
+
+**The Main Agent must not consider a worker task complete until it receives the worker's structured completion report (Step 9).** Repository-side polling is a supplementary check, not the primary signal.
+
+### Worker completion report format
+When a worker completes a job, it sends a structured report in this format:
+
+```
+[harness-pro:worker] Job Complete
+
+Task:         <task document reference>
+Branch:       <worktree branch name>
+PR:           <PR number / URL>
+Merged:       <merge commit SHA or confirmation>
+Validation:   All gates passed (tests, lint, arch-check)
+Self-Review:  Completed — <one-line summary of findings and resolutions>
+Scope:        <brief summary of files changed>
+Notes:        <any pre-existing issues, deviations, or observations>
+```
+
+When a worker is blocked, it sends:
+
+```
+[harness-pro:worker] Job Blocked
+
+Task:         <task document reference>
+Blocked At:   <step name>
+Reason:       <specific blocker description>
+Action Needed: <what the Main Agent needs to decide or provide>
+```
+
+The Main Agent must respond to both formats immediately:
+- **Job Complete** → update task graph, unlock dependent tasks, reschedule free worker
+- **Job Blocked** → diagnose, decide, and unblock (clarify requirements, split the task, or reassign)
 
 ---
 
@@ -118,7 +187,7 @@ The default model is:
 - persistent worker reuse
 - continuous task refill
 
-If a worker finishes, that worker should be reassigned another task from the currently needed queue immediately when possible.
+If a worker finishes and sends its completion report, that worker should be reassigned another task from the currently needed queue immediately when possible.
 
 If a worker becomes free and there is no fresh implementation task ready yet, the Main Agent should still assign useful work such as:
 - targeted testing
@@ -156,7 +225,7 @@ Instead:
 - keep only the currently needed task or tasks concretely specified
 - create the next task when a worker is ready to take it
 - create follow-up tasks immediately after new information appears, such as:
-  - a merge completed
+  - a worker completion report arrives
   - a review requested changes
   - a test found a bug
   - a regression check exposed a failure
@@ -206,9 +275,11 @@ Each worker agent should receive:
 - a dedicated branch name
 - a dedicated worktree path
 - a scoped task document
-- explicit validation commands
+- explicit validation commands including architecture constraint checks
+- explicit self-review requirement
 - explicit local review / merge expectations
-- explicit statement that the worker owns branch/worktree maintenance and final merge execution
+- explicit statement that the worker owns branch/worktree maintenance and final squash merge execution
+- explicit statement that the worker must report completion back to the Main Agent
 
 A worker may be reassigned across multiple tasks over time, but each assigned task must still use its own correct task-specific branch/worktree context.
 
@@ -224,21 +295,23 @@ This includes:
 - performing any worker-side merge or rebase needed inside the worktree
 - resolving conflicts inside the worker-owned branch/worktree
 - rerunning validation after worker-side merge, rebase, or conflict resolution
+- completing the Self-Review Gate before submitting a PR
 - responding to review feedback
-- completing the final merge into `main` after required review and validation conditions are satisfied
+- completing the final **squash merge** into `main` after required review and validation conditions are satisfied
+- sending a structured completion report to the Main Agent after merge
 
-The Main Agent does not need to operate the worker’s worktree directly.
+The Main Agent does not need to operate the worker's worktree directly.
 
 The Main Agent must not:
-- enter the worker-owned worktree to perform sync merges or rebases on the worker’s behalf
-- resolve the worker’s branch conflicts personally
+- enter the worker-owned worktree to perform sync merges or rebases on the worker's behalf
+- resolve the worker's branch conflicts personally
 - manually repair the worker branch to make it mergeable
 - take over routine worktree maintenance that belongs to the worker
 - perform the final worker-owned merge as a normal workflow step
 
-If a worker branch needs to incorporate the latest `main` or another approved dependency branch before review or merge, that merge or rebase is the worker’s responsibility, not the Main Agent’s.
+If a worker branch needs to incorporate the latest `main` or another approved dependency branch before review or merge, that merge or rebase is the worker's responsibility, not the Main Agent's.
 
-The worker must return the branch in a review-ready and mergeable state before handoff for final review, and must complete the final merge after approval and passing checks.
+The worker must return the branch in a review-ready and mergeable state before handoff for final review, complete the final squash merge after approval and passing checks, and then report completion back to the Main Agent.
 
 ---
 
@@ -290,50 +363,108 @@ This scope rule applies not only to implementation tasks but also to:
 
 ---
 
+## Mandatory test and fix cycle
+
+**After every implementation phase completes, the Main Agent must dispatch test tasks before unlocking the next phase. This is not optional.**
+
+A "phase" is any logical grouping of implementation tasks whose outputs can be independently validated — for example: completing an API layer, finishing a set of related features, or merging a group of dependent tasks.
+
+### The cycle
+
+```
+Implementation tasks complete (completion reports received)
+        ↓
+Main Agent dispatches TEST task(s) to free worker(s)
+        ↓
+Worker executes tests, reports results
+        ↓
+   ┌────────────────────────────────┐
+   │ All tests pass?                │
+   │  YES → mark phase verified     │
+   │         unlock next phase      │
+   │  NO  → Main Agent dispatches   │
+   │         FIX task(s) per issue  │
+   └────────────────────────────────┘
+        ↓ (if fixes dispatched)
+Worker implements fix, merges, reports
+        ↓
+Main Agent dispatches TEST task again (re-verify)
+        ↓
+Repeat until all tests pass
+```
+
+### Rules for test task dispatch
+
+- Dispatch at least one test task after every implementation phase, even if the worker's own Validation Gate already ran tests. The phase-level test task provides independent coverage across the full integrated state of `main`.
+- Test tasks must be written as task documents under `docs/tasks/` and dispatched to a worker — the Main Agent does not run tests directly.
+- Test tasks should be scoped to the area just implemented. Do not dispatch a full regression suite unless the phase touched cross-cutting concerns.
+- Multiple test tasks may be dispatched in parallel if different areas can be tested independently by different workers.
+
+### Rules for fix task dispatch
+
+- Every test failure reported by a worker must result in a fix task. The Main Agent must not leave failures unresolved.
+- Fix tasks must be written as task documents and dispatched to an available worker immediately.
+- Fix tasks are scoped to the specific failure. Do not bundle multiple unrelated failures into one fix task.
+- After a fix task merges, re-dispatch the corresponding test task to re-verify. Do not assume the fix was sufficient without re-running the test.
+- If a fix reveals a deeper issue requiring broader changes, the Main Agent must split it into a design/planning step first (writing a doc), then dispatch targeted fix tasks.
+
+### Prohibited responses to test failures
+
+The Main Agent must never:
+- ignore a reported test failure and proceed to the next phase
+- inline-fix the code directly (write access is `docs/` only)
+- defer fix tasks indefinitely because the implementation queue seems more urgent
+- mark a phase as complete when any test task has outstanding failures
+
+The test-and-fix cycle gates every phase transition. A phase is not complete until its test tasks have passed.
+
+---
+
 ## Main Agent / Worker boundary
 The Main Agent must not modify production code or test code for worker-owned tasks.
 
 The Main Agent may:
-- create and update planning documents
-- create and update design documents
-- create and update task documents
-- create and update review notes
-- create and update task graphs
-- inspect branches and worktrees
-- run validation for review purposes
-- review results
+- create and update planning documents under `docs/plan/`
+- create and update design documents under `docs/design/`
+- create and update task documents under `docs/tasks/`
+- create and update review notes under `docs/review/`
+- inspect branches and worktrees (read-only)
+- run validation commands for review purposes (read-only — does not substitute for worker-owned validation)
+- review results including self-review summaries from PRs
 - approve, reject, or request changes on worker submissions
-- record review outcomes
-- record worker-owned merge results
+- record review outcomes in `docs/review/`
+- receive and process worker completion reports
 - dispatch follow-up work through AgentTeam
 - reassign already existing workers within the fixed worker team
 - keep the worker team continuously utilized
 
 The Main Agent must not:
-- patch worker-owned code directly
-- quickly fix worker-owned tests
+- write, edit, or delete any source code file — **ever**
+- write, edit, or delete any test file — **ever**
+- write, edit, or delete any configuration, script, fixture, or CI file — **ever**
+- patch worker-owned code directly, even for a one-line fix
+- quickly fix worker-owned tests, even when the fix is obvious
 - silently clean up worker-owned implementation details
-- resolve worker-owned code issues by editing code personally
-- perform worker-owned branch/worktree sync merges or rebases on the worker’s behalf
+- perform worker-owned branch/worktree sync merges or rebases on the worker's behalf
 - enter the worker worktree to resolve worker-owned merge conflicts
 - take over routine worktree maintenance that belongs to the worker
 - perform the final merge into `main` on behalf of the worker as a normal workflow step
 - create new workers after the initial worker team is established as a normal scheduling action
 
-If any implementation change, test change, bug fix, cleanup, or correction is required in a worker-owned task:
-- do not edit the code directly
-- instead, create a task only when a worker is free and assign it to an already existing worker in the fixed team
+**If anything outside `docs/` needs to change — no matter how small or urgent — write a task document and dispatch it to a worker.** There are no exceptions.
 
-This applies even for:
-- small fixes
+This applies without exception to:
+- one-line fixes
 - test cleanups
 - review corrections
 - merge-conflict-related code adjustments
-- seemingly trivial edits
+- configuration tweaks
+- seemingly trivial edits of any kind
 
 Worker-owned branch/worktree integration is part of execution.  
-Worker-owned final merge into local or remote `main` is part of execution completion.  
-The Main Agent owns orchestration, review judgment, task-state transitions, worker reuse, and escalation, not worker execution.
+Worker-owned final squash merge into local or remote `main` is part of execution completion.  
+Worker-owned completion reporting is the final mandatory handshake that closes the task.  
+The Main Agent owns only `docs/`, orchestration, review judgment, task-state transitions, worker reuse, and escalation.
 
 ---
 
@@ -347,15 +478,18 @@ The Main Agent must maintain a live task graph with explicit states such as:
 - blocked
 - under review
 - approved-awaiting-worker-merge
-- merged
+- merged (confirmed by worker completion report)
 
 However, the live task graph does not require mass creation of tasks up front.
 
 Only create concrete worker tasks when they are actually needed for immediate assignment or immediate scheduling.
 
+**Primary completion signal: worker completion report.**  
+Secondary confirmation: repository-side inspection of the merge commit.
+
 Do not wait for all currently running agents to finish before planning more work.
 
-As soon as any worker result is merged and new independent work becomes available:
+As soon as a worker completion report arrives confirming a merge and new independent work becomes available:
 - run another scheduling pass
 - update the task graph
 - create the next needed task or tasks only for currently free workers
@@ -367,7 +501,7 @@ As soon as any worker becomes free:
 - otherwise create and assign review-support, verification, regression, test, or fix work
 - avoid leaving the worker idle unless absolutely no safe work exists
 
-Worker completion should continuously trigger:
+Worker completion reports should continuously trigger:
 - new planning
 - dependency resolution
 - rescheduling
@@ -376,7 +510,7 @@ Worker completion should continuously trigger:
 - utilization rebalancing
 
 Main-Agent review approval does not by itself mean the job is complete.  
-A worker-owned task is complete only after the worker has actually completed the merge into `main`.
+A worker-owned task is complete only after the worker has squash-merged into `main` **and** sent a completion report to the Main Agent.
 
 ---
 
@@ -426,10 +560,12 @@ Each dispatched worker agent must receive:
 - one worktree
 - one tightly bounded scope
 - explicit required agent contract: `harness-pro-worker`
-- explicit validation commands
+- explicit validation commands (including architecture constraint checks)
 - explicit acceptance criteria
 - explicit responsibility for branch/worktree maintenance
-- explicit responsibility for final merge execution after approval and passing checks
+- explicit responsibility for Self-Review Gate completion before PR
+- explicit responsibility for squash merge after approval and passing checks
+- explicit responsibility for structured completion report to the Main Agent after merge
 
 The Main Agent should not dispatch vague freeform implementation requests to AgentTeam.  
 Every AgentTeam worker assignment must be task-document-driven and reviewable in isolation.
@@ -441,14 +577,17 @@ This includes:
 - performing any necessary worker-side merge or rebase
 - resolving conflicts in the worker-owned branch
 - restoring the branch to a reviewable and mergeable state before handoff
-- completing the final merge after required approval and passing checks
+- completing the Validation Gate (tests + lint + **arch-check**)
+- completing the Self-Review Gate before PR submission
+- completing the final squash merge after required approval and passing checks
+- sending the structured completion report to the Main Agent
 
-The Main Agent should not perform these worktree integration or merge-completion steps for the worker.
+The Main Agent should not perform these steps for the worker.
 
 The Main Agent must reuse the already created worker team.  
 Do not create new workers simply because:
 - new tasks become available
-- a worker finishes a previous task
+- a worker finishes a previous task and sends a completion report
 - a task needs review-response work
 - a fix task appears after testing
 - a validation or test-only task appears
@@ -458,7 +597,7 @@ If the environment supports true parallel AgentTeam execution:
 
 If the environment supports only limited concurrency:
 - still keep the next needed work identifiable
-- dispatch newly needed jobs immediately as existing workers become free
+- dispatch newly needed jobs immediately as existing workers become free (triggered by completion reports)
 
 ---
 
@@ -475,7 +614,7 @@ If 3 workers are free at startup:
 - create up to 3 immediately needed tasks if safe and useful
 - do not create 8 or 12 speculative tasks just because they may become useful later
 
-As workers finish:
+As workers finish and send completion reports:
 - create the next needed task at that time
 - assign it immediately to the newly free worker
 
@@ -492,7 +631,7 @@ At any point, fully specify only:
 
 Do not write detailed task documents for distant later phases unless doing so is clearly low-risk and immediately useful.
 
-Prefer lightweight downstream placeholders until prerequisite merges, review outcomes, regressions, or validation results stabilize the architecture.
+Prefer lightweight downstream placeholders until prerequisite merges (confirmed by completion reports), review outcomes, regressions, or validation results stabilize the architecture.
 
 ---
 
@@ -508,17 +647,22 @@ Every worker-owned task must have a written task document that includes:
 - repository context
 - branch name
 - worktree path
-- required agent
+- required agent: `harness-pro-worker`
 - required files
-- expected file budget
+- expected file budget (normally **3 to 4 files**)
 - dependencies
 - worker-owned worktree integration responsibility
-- worker-owned final merge responsibility
+- worker-owned squash merge responsibility
+- worker-owned completion report responsibility
 - validation commands
+  - functional test commands
+  - repository-wide lint / type / format checks
+  - **architecture constraint check command** (e.g. `pnpm lint:arch`, `make check-deps`) — if absent, worker must report this gap before proceeding
+- self-review requirement (worker must complete Self-Review Gate before PR)
 - local review / merge flow
 - acceptance criteria
 
-The task document is the worker agent’s execution contract.
+The task document is the worker agent's execution contract.
 
 The `required agent` field must explicitly state:
 - `harness-pro-worker`
@@ -534,10 +678,14 @@ The `task type` field should explicitly classify the task, such as:
 - merge-verification
 
 The task document must explicitly state that:
-- branch/worktree sync is the worker’s responsibility
-- worker-side merge or rebase is the worker’s responsibility
-- worker-owned conflict resolution is the worker’s responsibility
-- final merge into `main` after approval and passing checks is the worker’s responsibility
+- branch/worktree sync is the worker's responsibility
+- worker-side merge or rebase is the worker's responsibility
+- worker-owned conflict resolution is the worker's responsibility
+- Validation Gate (tests + lint + arch-check) must fully pass before PR
+- Self-Review Gate (structured checklist) must fully pass before PR
+- merge strategy is **squash merge only** — no merge commits, no rebase-merge
+- final squash merge into `main` after approval and passing checks is the worker's responsibility
+- structured completion report to the Main Agent after merge is the worker's responsibility
 
 The expected file budget should normally be **3 to 4 files**.  
 If a task document implies a broader change, the Main Agent must split the job before dispatch rather than letting the worker expand scope during execution.
@@ -556,8 +704,107 @@ Create them when a free worker actually needs work.
 
 ---
 
+## Review and merge rule
+Use local PR-style review discipline unless remote PR tooling is explicitly available and allowed.
+
+Each worker agent should, before handoff for review:
+- keep the branch/worktree intact for review
+- produce a review note
+- report changed files (must be within the 3–4 file budget)
+- report validation commands and results (tests, lint, **arch-check**)
+- complete the Self-Review Gate and include the self-review summary in the PR description
+- perform any required worker-side merge or rebase inside the assigned worktree before handoff
+- resolve worker-owned conflicts before handoff
+- return the branch in a review-ready and mergeable state
+- state that the branch is ready for local review against `main`
+- after approval and required checks, complete the **squash merge** into `main`
+- after squash merge, send the structured completion report to the Main Agent
+
+The Main Agent should, during review:
+- inspect the scoped diff
+- verify validation evidence (tests, lint, arch-check all passed)
+- **verify the self-review summary is present in the PR description** — a PR without a self-review summary is incomplete and should be sent back
+- ensure the scope remains tight
+- ensure the task stayed within its intended 3 to 4 file budget unless explicitly approved otherwise
+- reject or re-split tasks that expanded into broad multi-file changes
+- approve, reject, or request changes on the worker submission
+- record review outcomes in the task graph and review artifacts
+- track whether the worker has sent the completion report confirming squash merge
+- reschedule newly unlocked work after receiving the worker completion report
+- immediately refill any newly freed worker with another suitable task
+
+Worker-side merge/rebase inside the assigned worktree is part of worker execution.  
+Final squash merge into local or remote `main` is also worker-owned execution completion.  
+Structured completion report to the Main Agent is the final mandatory handshake.  
+The Main Agent reviews and authorizes progress, but does not normally execute the merge on the worker's behalf.
+
+---
+
+## Validation rule
+The Main Agent may run validation for review purposes, but worker-owned validation is still required.
+
+Before a worker job is considered ready for review, the worker must confirm:
+- all directly relevant tests pass
+- all repository-wide required checks pass (lint, type, format, security)
+- **architecture constraint checks pass** (mechanically verified, not self-certified)
+- the Self-Review Gate checklist has been completed and is documented in the PR description
+- the worker's change remains tightly scoped and reviewable
+
+Do not treat code exists as completion.  
+Do not treat review approval as completion.  
+Do not treat squash merge as completion without the worker's completion report.
+
+A worker-owned task is complete only when:
+- the task scope is implemented or otherwise executed as specified
+- required tests were added or updated when applicable
+- Validation Gate passed (tests + lint + arch-check)
+- Self-Review Gate passed (documented in PR)
+- the branch was reviewed and approved
+- any required review feedback was resolved
+- the worker completed the squash merge into `main`
+- the worker sent the structured completion report to the Main Agent
+
+When the implementation queue is temporarily thin, validation and testing work remain valid worker assignments.
+
+---
+
+## Architecture constraint enforcement
+All repositories used in this workflow must have mechanically verifiable architecture layer checks.
+
+If a repository does not have an architecture constraint check:
+- the worker must report this gap to the Main Agent before proceeding past the Validation Gate
+- the Main Agent must treat the absence of this check as a gap requiring resolution
+- the Main Agent should create a task to add the architecture constraint tooling before further implementation tasks are dispatched
+
+Architecture constraint checks must verify:
+- one-way dependency directions between modules/layers
+- no circular imports
+- no cross-boundary imports that violate the declared layer structure
+
+These checks are mandatory mechanical gates — they cannot be replaced by self-certification or manual inspection alone.
+
+---
+
+## Squash merge policy
+All merges into `main` must use **squash merge**.
+
+The Main Agent must:
+- require squash merge in every task document
+- verify that workers report squash merge completion (not merge commit or rebase-merge)
+- reject completion reports that indicate a non-squash merge was used
+
+Squash merge requirements:
+- all commits from the worker branch are collapsed into a single commit on `main`
+- squash commit message must be concise and reference the task document (e.g. `feat: add user profile update endpoint [task-042]`)
+- merge commits are prohibited
+- rebase-merge is prohibited unless the Main Agent explicitly overrides for a specific task
+
+Squash merge keeps the main branch history linear and reviewable at high throughput, which is essential for parallel multi-worker workflows.
+
+---
+
 ## Stall detection rule
-Use repository-side evidence to detect progress, but do not reclaim worker agents too aggressively.
+Use repository-side evidence **and** worker completion reports to detect progress. Do not reclaim worker agents too aggressively.
 
 Do not classify a worker as stalled immediately after branch/worktree creation.  
 After branch/worktree creation, allow a fair initial execution window before reclaiming.
@@ -571,35 +818,21 @@ Observable progress may include:
 - worker-side merge or rebase activity inside the assigned worktree
 - conflict-resolution commits that keep the worker branch mergeable
 - merge-completion activity after approval
+- worker completion report (strongest signal)
 - focused test execution
 - regression-check execution
 - bug-reproduction progress
 - validation rerun activity
 
-If branch/worktree exists but no scoped file changes appear yet:
+If branch/worktree exists but no scoped file changes appear and no completion report has arrived:
 - do one follow-up check after a reasonable delay before reclaiming
 
 Reclaim only if there is still no repository-side progress after that extended window.
 
-Repository state is the source of truth for progress, but early branch/worktree creation counts as real initial progress and must not trigger immediate reclamation.
-
-Do not reclaim a worker simply because code changes are not yet visible during the earliest phase of:
-- startup
-- agent loading
-- task-document reading
-- environment setup
-- first test-writing
-
-Do not reclaim a worker merely because it is performing legitimate:
-- worktree integration
-- sync merge
-- rebase
-- conflict resolution
-- merge-completion work after approval
-- regression testing
-- verification work
-- bug reproduction
-- validation reruns
+Do not reclaim a worker simply because:
+- code changes are not yet visible during the earliest phase of startup, agent loading, task-document reading, or environment setup
+- the worker is performing legitimate Self-Review Gate work (this takes time — it is not stalling)
+- the worker is performing legitimate worktree integration, sync merge, rebase, conflict resolution, squash merge, or completion reporting
 
 When a worker is reclaimed:
 - update the live task graph and ownership metadata immediately
@@ -610,78 +843,36 @@ Recovery should be quick enough to avoid long blockage, but not so aggressive th
 
 ---
 
-## Review and merge rule
-Use local PR-style review discipline unless remote PR tooling is explicitly available and allowed.
-
-Each worker agent should:
-- keep the branch/worktree intact for review
-- produce a review note
-- report changed files
-- report validation commands and results
-- perform any required worker-side merge or rebase inside the assigned worktree before handoff
-- resolve worker-owned conflicts before handoff
-- return the branch in a review-ready and mergeable state
-- state that the branch is ready for local review against `main`
-- after approval and required checks, complete the final merge into `main`
-
-The Main Agent should:
-- inspect the scoped diff
-- verify validation evidence
-- ensure the scope remains tight
-- ensure the task stayed within its intended 3 to 4 file budget unless explicitly approved otherwise
-- reject or re-split tasks that expanded into broad multi-file changes
-- approve, reject, or request changes on the worker submission
-- record review outcomes in the task graph and review artifacts
-- track whether the worker has completed the final merge
-- reschedule newly unlocked work after worker-owned merge completion
-- immediately refill any newly freed worker with another suitable task
-
-Worker-side merge/rebase inside the assigned worktree is part of worker execution.  
-Final merge into local or remote `main` is also worker-owned execution completion.  
-The Main Agent reviews and authorizes progress, but does not normally execute the merge on the worker’s behalf.
-
----
-
-## Validation rule
-The Main Agent may run validation for review purposes, but worker-owned validation is still required.
-
-Before a worker job is considered ready for review:
-- directly relevant tests must pass
-- required repository-wide validation must pass
-- the worker’s change must remain tightly scoped and reviewable
-
-Do not treat code exists as completion.  
-Do not treat review approval as completion.
-
-A worker-owned task is complete only when:
-- the task scope is implemented or otherwise executed as specified
-- required tests were added or updated when applicable
-- required validation passed
-- the branch was reviewed
-- any required review feedback was resolved
-- the worker completed the final merge into `main`
-
-When the implementation queue is temporarily thin, validation and testing work remain valid worker assignments.
-
----
-
 ## Recommended execution sequence
 1. Create the local project repository.
-2. Write only the minimum design and implementation planning needed to start safely.
-3. Create the initial live task graph structure.
-4. Create the fixed initial worker team once.
-5. Inspect which workers are currently free.
-6. Create only the immediately needed task or tasks required to occupy those free workers.
-7. Dispatch those tasks through the fixed AgentTeam.
-8. Monitor repository-side progress rather than relying only on worker chat.
-9. Review completed worker branches and decide whether they are approved, rejected, or need changes.
-10. Require workers to complete any needed review-response iteration, branch maintenance, and final merge execution.
-11. As soon as any worker becomes free, immediately create and assign the next suitable task from implementation, fix, check, validation, regression, or test work.
-12. Immediately reschedule newly unlocked jobs after worker-owned merge completion.
-13. If no implementation task is ready, create and assign test, regression, verification, or bug-reproduction work instead of leaving workers idle.
-14. Reclaim and re-dispatch only when stall detection rules are truly met.
-15. Continue until the project goal is complete.
-16. Clean up merged worktrees and branches only after the workflow is fully settled.
+2. Verify or establish architecture constraint tooling in the repository. If absent, create and dispatch a setup task first.
+3. Write only the minimum design and implementation planning needed to start safely under `docs/`.
+4. Create the initial live task graph structure under `docs/plan/`.
+5. Create the fixed initial worker team once.
+6. Inspect which workers are currently free.
+7. Create only the immediately needed task or tasks required to occupy those free workers.
+8. Dispatch those tasks through the fixed AgentTeam, with full task documents including arch-check commands, self-review requirement, squash merge requirement, and completion report requirement.
+9. Monitor repository-side progress and listen for worker completion reports.
+10. When a completion report arrives:
+    - Mark the task as merged in the task graph
+    - Unlock dependent tasks
+    - Reschedule the now-free worker immediately
+11. Review completed worker branches: verify self-review summary is present, validation evidence is complete, scope is within budget.
+12. Require workers to complete any needed review-response iteration, branch maintenance, and squash merge execution.
+13. **When an implementation phase completes (all phase tasks merged and completion reports received):**
+    - Immediately write test task documents under `docs/tasks/`
+    - Dispatch test tasks to free workers before unlocking the next implementation phase
+    - Do not proceed to the next phase until test tasks have reported results
+14. **When a test task reports failures:**
+    - Write fix task documents under `docs/tasks/` for each distinct failure
+    - Dispatch fix tasks to available workers immediately
+    - After fix tasks merge, re-dispatch the corresponding test tasks
+    - Repeat until all test tasks pass — only then unlock the next phase
+15. As soon as any worker becomes free (completion report received or stall detected), immediately create and assign the next suitable task from implementation, test, fix, check, validation, or regression work.
+16. Immediately reschedule newly unlocked jobs after worker-owned squash merge is confirmed by completion report.
+17. Reclaim and re-dispatch only when stall detection rules are truly met.
+18. Continue the implementation → test → fix → retest cycle until the project goal is complete and all phases are verified.
+19. Clean up merged worktrees and branches only after the workflow is fully settled and all completion reports have been received.
 
 ---
 
@@ -689,22 +880,25 @@ When the implementation queue is temporarily thin, validation and testing work r
 When reporting status to the user, be explicit about:
 - what repository is active
 - what fixed worker team is active
-- which jobs are ready / running / under review / approved-awaiting-worker-merge / merged / blocked
+- which jobs are ready / running / under review / approved-awaiting-worker-merge / merged (with completion report received) / blocked
 - which worker agents are currently assigned
-- which worker agents have just become free
-- what merged recently
+- which worker agents have just become free (via completion report)
+- what merged recently (confirmed by completion report)
 - what was newly unlocked
 - what is being created and dispatched next
 - whether any worker was reclaimed and why
-- whether validation passed
+- whether validation passed (including arch-check)
+- whether self-review summaries were present in reviewed PRs
 - whether the local repository is clean
 
 When reporting active jobs, the Main Agent should also state:
 - whether each worker task remains within the intended 3 to 4 file scope
 - what type of task each worker is currently handling
 - whether the task is still in worker-owned review-response iteration
-- whether final merge is still pending worker action
-- whether the task has already landed in `main`
+- whether the worker is in the Self-Review Gate or squash merge phase
+- whether final squash merge is still pending worker action
+- whether a completion report has been received for the task
+- whether the task has already landed in `main` (confirmed by completion report)
 - whether any worker has been reassigned to test, regression, verification, or fix work to avoid idleness
 
 If any task exceeds scope, stalls, or remains unmerged after approval, the Main Agent should explicitly say whether it was:
@@ -715,6 +909,8 @@ If any task exceeds scope, stalls, or remains unmerged after approval, the Main 
 
 Keep user-facing status updates concise, but keep repository-side records precise.
 
-## language constraint
+---
+
+## Language constraint
 
 Except for communicating with users and writing user-facing documents in **Chinese**, all other content must be in **English**.
