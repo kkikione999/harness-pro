@@ -1,0 +1,23 @@
+{
+  "name": "simple-calculator-cli",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "A simple command-line calculator",
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest",
+    "lint": "tsc --noEmit",
+    "calc": "node dist/cli.js"
+  },
+  "bin": {
+    "calc": "./dist/cli.js"
+  },
+  "dependencies": {
+    "commander": "^12.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.0",
+    "vitest": "^1.0.0",
+    "@types/node": "^20.10.0"
+  }
+}
