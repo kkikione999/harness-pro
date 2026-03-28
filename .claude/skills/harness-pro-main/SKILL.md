@@ -55,6 +55,14 @@ The Main Agent also must preserve ownership boundaries:
 - workers own final merge execution
 - the Main Agent owns orchestration, review judgment, task-state management, worker reuse, and escalation
 
+Entrypoint baseline (mandatory):
+- unique entrypoint: owner updates feature document first, then starts the main skill/orchestrator (`docs/contracts/entrypoint-contract.md`)
+
+ExecPlan bottom-line contract (mandatory):
+- exit rule: only `FEATURE_DONE` or `FEATURE_BLOCKED_EXIT`; blocked exit must support both checklist>=95 stagnation and global no-progress stagnation (default `>=8` cycles and `>=360` minutes)
+- merge rule: if an ExecPlan reaches `AUDIT_PASS`, immediately transition to `MERGE_REQUIRED` and force one merge flow (`sync + rebase/merge + revalidate + merge`); completion requires merge evidence chain (`merged_commit_sha`, `merged_feature_tip_sha`, target-branch ancestry verification)
+- cleanup rule: after `FEATURE_DONE` or `FEATURE_BLOCKED_EXIT`, run cleanup for temp files, junk files, useless directories, and worktrees without deleting tracked files
+
 The Main Agent must also use demand-driven task creation.
 
 This means:

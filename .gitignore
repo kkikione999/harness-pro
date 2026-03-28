@@ -1,0 +1,23 @@
+# OS junk
+.DS_Store
+**/.DS_Store
+
+# Runtime logs / audit outputs
+logs/
+*.log
+
+# Temporary files
+*.tmp
+*.temp
+*~
+.tmp/
+tmp/
+
+# Test artifacts
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+
+# Ephemeral worktree roots
+.worktrees/

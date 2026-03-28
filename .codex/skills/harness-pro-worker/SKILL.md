@@ -44,6 +44,12 @@ If the task document is ambiguous, incomplete, or internally inconsistent:
 - make the minimum safe interpretation needed to proceed only if it does not expand scope
 - otherwise report the ambiguity clearly
 
+ExecPlan lifecycle enforcement:
+- when Main marks `AUDIT_PASS`, this worker must immediately run merge flow (`sync + rebase/merge + revalidate + merge`)
+- completion reporting must include `merged_commit_sha`
+- `AUDIT_PASS` is not completion; `MERGED` with recorded commit SHA is completion for the ExecPlan merge phase
+- if feature exits with `FEATURE_DONE` or `FEATURE_BLOCKED_EXIT`, run post-exit cleanup without deleting tracked files
+
 ---
 
 ## Worktree policy

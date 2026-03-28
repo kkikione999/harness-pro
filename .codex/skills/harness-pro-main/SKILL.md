@@ -1,6 +1,6 @@
 ---
 name: harness-pro-main
-description: Main-agent orchestration skill for large multi-step engineering projects in Codex. Use this skill when the task requires rolling multi-worker coordination, local git worktrees, task-document-driven worker execution, strict Main Agent/Worker separation, small-scope worker jobs, and continuous rescheduling as worker jobs merge.
+description: Main-agent orchestration skill for large multi-step engineering projects in Codex. Use this skill when the task requires rolling multi-worker coordination, local git worktrees, task-document-driven worker execution, strict Main Agent/Worker separation, small-scope worker jobs, and continuous rescheduling as worker-owned merge completion lands.
 ---
 
 # harness-pro-main
@@ -14,7 +14,7 @@ Use this skill when:
 - a rolling task graph is needed
 - isolated git worktrees should be used
 - workers must execute under a separate worker contract such as `harness-pro-worker`
-- the Main Agent must coordinate planning, dispatch, review, merge, and rescheduling without directly implementing worker-owned code
+- the Main Agent must coordinate planning, dispatch, audit, and rescheduling while workers own final merge completion
 
 Do not use this skill for:
 - single-file quick fixes
@@ -36,10 +36,20 @@ The Main Agent is responsible for:
 - dispatching worker jobs
 - monitoring repository-side progress
 - reviewing completed worker outputs
-- merging approved worker branches
+- auditing merge-readiness and merge evidence
 - rescheduling newly unlocked work
 
 The Main Agent is **not** responsible for writing worker-owned production code or worker-owned test code.
+
+Execution ownership baseline:
+- Main Agent owns orchestration and audit
+- Worker owns sync + rebase/merge + revalidate + final merge
+- unique entrypoint: owner updates feature document first, then starts the main skill/orchestrator (`docs/contracts/entrypoint-contract.md`)
+
+ExecPlan bottom-line contract (must stay consistent with `docs/contracts/*.md`):
+- exit rule: only `FEATURE_DONE` or `FEATURE_BLOCKED_EXIT`; blocked exit must support both checklist>=95 stagnation and global no-progress stagnation (default `>=8` cycles and `>=360` minutes)
+- merge rule: `AUDIT_PASS` must immediately transition to `MERGE_REQUIRED`, and completion requires merge evidence chain (`merged_commit_sha`, `merged_feature_tip_sha`, target-branch ancestry verification)
+- cleanup rule: after `FEATURE_DONE` or `FEATURE_BLOCKED_EXIT`, cleanup is mandatory and must not delete tracked files
 
 A core orchestration responsibility of the Main Agent is scope slicing.  
 The Main Agent must decompose implementation so that each worker-owned job usually changes only **3 to 4 files**.  
@@ -145,7 +155,7 @@ The Main Agent may:
 - inspect branches and worktrees
 - run validation for review purposes
 - review results
-- merge approved work
+- verify worker-reported merge completion evidence
 - dispatch follow-up work
 
 The Main Agent must not:
@@ -314,8 +324,12 @@ The Main Agent should:
 - ensure the scope remains tight
 - ensure the task stayed within its intended 3 to 4 file budget unless explicitly approved otherwise
 - reject or re-split tasks that expanded into broad multi-file changes
-- merge approved work into local `main`
-- record merge results in the task graph and review artifacts
+- mark `AUDIT_PASS` only when review/audit gates are satisfied
+- immediately require worker merge flow: sync + rebase/merge + revalidate + merge
+- record `merged_commit_sha` in task graph and review artifacts
+
+The Main Agent must not mark completion at `AUDIT_PASS`.  
+Completion is allowed only after worker merge evidence confirms `MERGED`.
 
 ---
 
@@ -334,7 +348,7 @@ A worker-owned implementation job is complete only when:
 - required tests were added or updated
 - required validation passed
 - the branch was reviewed
-- the change was merged into local `main`
+- the worker completed merge flow and `merged_commit_sha` is recorded
 
 ---
 
@@ -346,8 +360,8 @@ A worker-owned implementation job is complete only when:
 5. Write at most the next unlock frontier.
 6. Dispatch the first worker wave.
 7. Monitor repository-side progress rather than relying only on worker chat.
-8. Review and merge completed worker branches.
-9. Immediately reschedule newly unlocked jobs.
+8. Review and audit completed worker branches.
+9. On `AUDIT_PASS`, immediately require worker merge flow and capture `merged_commit_sha`.
 10. Reclaim and re-dispatch only when stall detection rules are truly met.
 11. Continue until the project goal is complete.
 12. Clean up merged worktrees and branches only after the workflow is fully settled.
