@@ -1,0 +1,23 @@
+{
+  "skill_name": "decompose-requirement",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "给用户列表页面加一个搜索功能，能按用户名搜索",
+      "expected_output": "应该走 Fast path，定位到已有用户列表 feature，定义为修改/增强。产出 atomic feature，包含搜索框 UI +过滤逻辑，明确 out_of_bound（如不支持高级搜索、不涉及后端 API 改动等）",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "我想把现有的 Web 应用改造成支持多租户，现在所有数据都是共享的，需要隔离不同租户的数据",
+      "expected_output": "应该走 Full path，识别需求过大，先拆子项目（如：租户模型、数据隔离层、认证改造、管理后台等），选择其中一个聚焦，通过澄清循环收敛。不应一次性产出所有 feature",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "用户反馈下单流程太慢了，从点击下单到看到确认页要 5 秒以上，需要优化",
+      "expected_output": "应该走 Full path，先分析瓶颈（前端渲染？后端接口？数据库查询？），暴露对现有 feature 的关联判断（涉及订单 feature + 支付 feature），提出验收标准时挑战'快'的模糊定义，要求可量化的指标",
+      "files": []
+    }
+  ]
+}
