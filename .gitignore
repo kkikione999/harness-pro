@@ -1,5 +1,4 @@
 .DS_Store
-.claude/
 *.pyc
 __pycache__/
 node_modules/
