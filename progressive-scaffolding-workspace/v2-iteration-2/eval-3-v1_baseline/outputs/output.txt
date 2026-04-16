@@ -1,0 +1,166 @@
+# Progressive Scaffolding v1 - Baseline Evaluation Report
+# Date: 2026-04-09
+# Project: /tmp/test-api-v1-baseline
+
+## TASK SUMMARY
+
+Fixed broken Node.js API server (returns 500 on /api/users) and added
+progressive-scaffolding controllability + observability scaffolding from scratch.
+
+## BUG IDENTIFIED
+
+File: /tmp/test-api-v1-baseline/src/main.js
+Function: handleUsers()
+Problem: Always returned HTTP 500 with fake "Database unavailable" error,
+        despite hardcoded users data being available.
+
+Root cause: Intentional broken stub — hardcoded DB_CONFIG.host = "wrong-host.local"
+            caused simulate_db_failure() behavior in handleUsers().
+
+## FIX APPLIED
+
+Changed handleUsers() to return the hardcoded users array directly:
+
+BEFORE:
+  res.writeHead(500, { 'Content-Type': 'application/json' });
+  res.end(JSON.stringify({ error: 'Database unavailable', ... }));
+
+AFTER:
+  res.writeHead(200, { 'Content-Type': 'application/json' });
+  res.end(JSON.stringify({ users: users }));
+
+## SCAFFOLDING GENERATED (via progressive-scaffolding v1)
+
+Using skill at:
+/Users/josh_folder/harness-pro-for-vibe/harness-blogs/progressive-scaffolding-workspace/v2-redesign/skill-v1-backup
+
+Command:
+  ./generate-scaffolding.sh /tmp/test-api-v1-baseline --type backend
+
+Generated at: /tmp/test-api-v1-baseline/.harness/
+
+### Controllability (.harness/controllability/)
+  - Makefile           make run/stop/verify/test-auto/logs/clean
+  - start.sh           Start server with correlation ID + PID file
+  - stop.sh            Stop server via PID file
+  - verify.sh          Health check via /health endpoint
+  - test-auto.sh       Automated API endpoint tests (3 checks)
+  - analyze-deps.sh    Dependency analysis
+  - lint-import-direction.sh  Module layer enforcement
+
+### Observability (.harness/observability/)
+  - health.sh          JSON health status (process + HTTP)
+  - log.sh             Structured log query (recent/search/follow)
+  - trace.sh           Correlation ID injection wrapper
+  - logs/              Server log output directory
+
+### CI (.harness/ci/)
+  - ci-pipeline.yml    GitHub Actions pipeline template
+
+### Root
+  - test_api_v1_baseline.pid  Server PID file
+
+## SCAFFOLDING BUGS FIXED DURING EVALUATION
+
+The v1 scaffolding templates had path resolution bugs that were fixed:
+
+1. Double .harness path: Templates used $PROJECT_ROOT/.harness/... but
+   PROJECT_ROOT already resolved to .harness/ (scripts are 1 level deep).
+   Fix: Changed to $PROJECT_ROOT/... (PID file, LOG_DIR paths).
+
+2. BASH_SOURCE resolution: When run as ./start.sh from controllability/,
+   dirname(BASH_SOURCE[0]) = "." so PROJECT_ROOT was wrong.
+   Fix: Changed to SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+        then PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)".
+
+3. Default port mismatch: verify.sh/health.sh defaulted to :8080 but API
+   server runs on port 3000. Fix: Updated default to :3000.
+
+4. Missing project pattern: start.sh only checked package.json/go.mod/Makefile
+   but this project has src/main.js. Fix: Added src/main.js detection.
+
+5. stop.sh pkill pattern: Was pkill -f "test_api_v1_baseline" which matches
+   .harness directory. Fix: Changed to pkill -f "node.*main.js".
+
+6. Makefile cd path: "cd .. && ./controllability/start.sh" was wrong when
+   run from controllability/. Fix: Changed to ./start.sh (same dir).
+
+7. Makefile exit code capture: "[ $$EXIT_CODE -eq 0 ]" failed when EXIT_CODE
+   was empty due to Makefile multi-line issues. Fix: Combined into single
+   shell command with semicolons.
+
+8. test-auto.sh path: Same BASH_SOURCE issue as above. Fix: Same approach.
+
+## VERIFICATION RESULTS
+
+All scaffolding tools verified working:
+
+  make run       -> Starts server on port 3000, writes PID + logs
+  make verify     -> Checks /health endpoint, returns HTTP 200
+  make test-auto  -> Tests /health + /api/users, 3/3 pass
+  make stop       -> Kills server via PID file
+  ./health.sh     -> JSON: {"status":"running","pid":...,"http_status":200}
+  ./log.sh recent -> Shows last N log lines
+  ./trace.sh      -> Wraps commands with CORRELATION_ID
+
+## API ENDPOINT RESULTS
+
+Before fix:
+  $ curl http://localhost:3000/api/users
+  {"error":"Database unavailable","details":{"error":"Connection refused"...}}
+  HTTP 500
+
+After fix:
+  $ curl http://localhost:3000/api/users
+  {"users":[{"id":1,"name":"Alice"},{"id":2,"name":"Bob"}]}
+  HTTP 200
+
+## SCAFFOLDING CAPABILITY LEVELS (E1-E4, O1-O4, V1-V3)
+
+E1 Execute:     Level 2 - Makefile + bash scripts (node src/main.js)
+E2 Intervene:   Level 2 - Can write .harness configs, start/stop scripts
+E3 Input:       Level 2 - Env vars via HEALTH_ENDPOINT, CORRELATION_ID
+E4 Orchestrate: Level 2 - make run → verify → test-auto pipeline
+
+O1 Feedback:    Level 2 - Structured JSON from health.sh/log.sh
+O2 Persist:     Level 2 - Log files in .harness/observability/logs/
+O3 Queryable:   Level 2 - log.sh search + recent commands
+O4 Attribute:   Level 2 - Correlation IDs in start.sh + trace.sh
+
+V1 Exit Code:   Level 2 - Typed: 0=pass, 1=fail
+V2 Semantic:    Level 2 - JSON structured output
+V3 Automated:  Level 2 - make test-auto auto-parses + reports
+
+## FILES MODIFIED
+
+1. /tmp/test-api-v1-baseline/src/main.js
+   - Fixed handleUsers() to return users data (HTTP 200)
+
+2. /tmp/test-api-v1-baseline/.harness/controllability/start.sh
+   - Fixed path resolution (SCRIPT_DIR → PROJECT_ROOT)
+   - Added src/main.js detection pattern
+   - Fixed PID_FILE path
+
+3. /tmp/test-api-v1-baseline/.harness/controllability/verify.sh
+   - Fixed path resolution + PID_FILE path
+   - Updated default health endpoint to port 3000
+
+4. /tmp/test-api-v1-baseline/.harness/controllability/stop.sh
+   - Fixed PID_FILE path
+   - Fixed pkill pattern to target node processes
+
+5. /tmp/test-api-v1-baseline/.harness/controllability/test-auto.sh
+   - Fixed path resolution
+   - Implemented API endpoint verification tests
+
+6. /tmp/test-api-v1-baseline/.harness/controllability/Makefile
+   - Fixed run/stop targets to use relative paths
+   - Fixed exit code capture in verify/test-auto targets
+
+7. /tmp/test-api-v1-baseline/.harness/observability/log.sh
+   - Fixed path resolution + LOG_DIR path
+
+8. /tmp/test-api-v1-baseline/.harness/observability/health.sh
+   - Fixed path resolution + PID_FILE path
+   - Updated default health endpoint to port 3000
+

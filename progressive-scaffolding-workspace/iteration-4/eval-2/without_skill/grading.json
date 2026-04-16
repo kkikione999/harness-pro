@@ -1,0 +1,31 @@
+{
+  "run_id": "eval-2-without_skill",
+  "timestamp": "2026-04-09",
+  "expectations": [
+    {
+      "text": "identifies-project-type: Report identifies the project as a TypeScript/Node.js CLI project",
+      "passed": true,
+      "evidence": "Report header states: 'Type: TypeScript CLI (open-source reconstruction of Claude Code v2.1.88)' and notes '1,888 TypeScript/TSX files'. The JSON scores file confirms type: 'cli', language: 'typescript'."
+    },
+    {
+      "text": "notes-no-ci: Report notes absence of CI/CD pipeline",
+      "passed": true,
+      "evidence": "Section 2.3 V3 Automated Verification states: 'No CI/CD -- No .github/workflows/, no GitLab CI, no Jenkinsfile. Zero automated verification on commit.' Also notes absence of pre-commit hooks and .pre-commit-config.yaml."
+    },
+    {
+      "text": "notes-no-tests: Report notes absence of test infrastructure",
+      "passed": true,
+      "evidence": "Section 2.4 Infrastructure Gaps states: 'No test framework -- Zero test files (*.test.ts, *.spec.ts). No Jest, Vitest, or any test runner. This is a read-only recovered codebase.' Also notes absence of tsconfig.json, ESLint, and build system."
+    },
+    {
+      "text": "recognizes-existing-observability: Report recognizes existing telemetry/analytics/logging infrastructure in the source code",
+      "passed": false,
+      "evidence": "The report describes what exists in section 1 (rules system, agent documentation, project structure) but never acknowledges the project's internal telemetry/analytics infrastructure. There is no mention of src/utils/telemetry/, src/services/analytics/, OpenTelemetry references, distributed tracing patterns, or any observability code embedded in the source. The report only catalogs the external harness-level tooling (lint scripts, docs) and entirely misses the rich telemetry that exists within the 1,888 TypeScript source files."
+    },
+    {
+      "text": "provides-concrete-recommendations: Report provides concrete, actionable improvement recommendations",
+      "passed": true,
+      "evidence": "Section 5 'Priority Remediation Plan' provides a 4-phase plan with 14 numbered, specific recommendations including exact file paths and purposes: create root Makefile, .harness/controllability/Makefile, verify.sh, test-auto.sh, .harness/observability/logs/, log.sh, health.sh, trace.sh, metrics.sh, commit to git, add --json flag to check.py, GitHub Actions workflow, and pre-commit hooks."
+    }
+  ]
+}

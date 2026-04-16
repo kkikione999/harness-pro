@@ -1,0 +1,36 @@
+{
+  "run_id": "eval-1-with_skill",
+  "timestamp": "2026-04-09T02:45:00Z",
+  "expectations": [
+    {
+      "text": "identifies-as-software-project",
+      "passed": true,
+      "evidence": "The assessment report opens with 'Step 1.0: Pre-Check -- Is This a Software Project?' and states 'Result: YES. This is a software project.' It cites specific evidence: package.json with bin field, ~1,888 TypeScript/TSX source files, pre-compiled CLI bundle, and custom lint scripts. It explicitly classifies the project type as 'cli' with confidence 1."
+    },
+    {
+      "text": "covers-all-dimensions",
+      "passed": true,
+      "evidence": "The report's 'Step 1.2: Probe Results' section covers all 11 dimensions across three tables. Controllability: E1 Execute (Level 1), E2 Intervene (Level 2), E3 Input (Level 2), E4 Orchestrate (Level 1). Observability: O1 Feedback (Level 2), O2 Persist (Level 3), O3 Queryable (Level 1), O4 Attribute (Level 2). Verification: V1 Exit Code (Level 1), V2 Semantic (Level 2), V3 Automated (Level 1). All 11 dimensions present with level ratings and evidence."
+    },
+    {
+      "text": "detects-no-tests",
+      "passed": true,
+      "evidence": "The report identifies absence of test infrastructure in multiple places. E1 Execute: 'No build system (no Makefile, no scripts in root package.json). The package/package.json has no test/start/build scripts.' V1 Exit Code: 'package.json has no \"test\" script. No Makefile with test target.' V3 Automated: 'No CI/CD (no .github/workflows). No pre-commit hooks. No automated verification. Lint scripts exist but must be run manually.' The gap analysis explicitly flags V1 and V3 as below Level 2."
+    },
+    {
+      "text": "detects-existing-telemetry",
+      "passed": false,
+      "evidence": "The report partially recognizes observability patterns: O2 Persist notes 'Custom structured logging in source code' and O4 Attribute notes 'correlation-like patterns (request IDs in API calls, trace-like patterns in tool execution pipeline).' However, it does not explicitly identify or name existing telemetry/analytics utilities in the Open-ClaudeCode codebase. There is no mention of 'telemetry', 'analytics', or specific tracking SDKs/utilities the project may already contain. The detection is indirect (noting patterns) rather than directly identifying existing telemetry infrastructure."
+    },
+    {
+      "text": "generates-harness-directory",
+      "passed": true,
+      "evidence": "A 'harness-scaffolding' directory exists at outputs/harness-scaffolding/ containing: a root Makefile, an assessment-report.md, a controllability/ subdirectory (with Makefile, start.sh, stop.sh, test-auto.sh, verify.sh), and an observability/ subdirectory (with health.sh, log.sh, metrics.sh, trace.sh). This matches the expected .harness/scaffolding pattern with multiple generated scripts."
+    },
+    {
+      "text": "scripts-relevant-to-typescript",
+      "passed": true,
+      "evidence": "Multiple scripts reference TypeScript-specific tooling: start.sh uses 'node \"$CLI_PATH\"' to execute the CLI (line 24). stop.sh uses 'pkill -f \"cli.js\"' (line 15). verify.sh searches for '*.ts' and '*.tsx' files with find commands (lines 26, 34). The Makefile status target counts TS/TSX files (lines 95-99). metrics.sh counts .ts/.tsx files by category (lines 9-15). health.sh counts .ts/.tsx files (lines 10-12). The controllability Makefile references the project's TypeScript source structure throughout."
+    }
+  ]
+}

@@ -1,0 +1,164 @@
+#!/bin/bash
+# analyze-deps.sh — Dependency graph analysis with cycle detection
+# Scans source imports and builds a dependency graph, then detects cycles via DFS.
+#
+# Usage:
+#   ./analyze-deps.sh [--cycles] [--json] [--dot]
+#   ./analyze-deps.sh --cycles    # Only show cycles
+#   ./analyze-deps.sh --json      # Output as JSON
+#   ./analyze-deps.sh --dot       # Output Graphviz DOT format
+#
+# Exit codes:
+#   0 = no cycles found
+#   1 = cycles detected
+
+set -euo pipefail
+
+PROJECT_ROOT="/Users/josh_folder/Open-ClaudeCode"
+MODE="full"
+OUTPUT_JSON=false
+OUTPUT_DOT=false
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --cycles) MODE="cycles"; shift ;;
+        --json)   OUTPUT_JSON=true; shift ;;
+        --dot)    OUTPUT_DOT=true; shift ;;
+        --help|-h)
+            echo "Usage: $0 [--cycles] [--json] [--dot]"
+            echo "Analyze module dependency graph and detect cycles."
+            exit 0 ;;
+        *) shift ;;
+    esac
+done
+
+cd "$PROJECT_ROOT" || exit 2
+
+# Collect module-level imports
+# Each line: "src/moduleA -> src/moduleB"
+declare -A GRAPH    # adjacency list: module -> "dep1 dep2 dep3"
+declare -A ALL_NODES
+CYCLES=""
+
+echo "=== Dependency Graph Analysis ===" >&2
+echo "" >&2
+
+# Scan for imports (TypeScript/JavaScript)
+while IFS= read -r line; do
+    file=$(echo "$line" | cut -d: -f1)
+    import_path=$(echo "$line" | sed -E "s/.*from ['\"]([^'\"]+)['\"].*/\1/" | sed -E "s/.*import\(['\"]([^'\"]+)['\"].*/\1/")
+
+    # Resolve relative imports to module paths
+    if [[ "$import_path" == .* ]]; then
+        dir=$(dirname "$file")
+        resolved=$(realpath --relative-to="$PROJECT_ROOT" "$dir/$import_path" 2>/dev/null || echo "")
+        if [[ -n "$resolved" ]]; then
+            # Extract top-level module (src/utils/foo -> src/utils)
+            module=$(echo "$resolved" | cut -d/ -f1-2)
+            source_module=$(echo "$file" | cut -d/ -f1-2)
+
+            if [[ "$module" != "$source_module" && "$module" == src/* ]]; then
+                if [[ -z "${GRAPH[$source_module]:-}" ]]; then
+                    GRAPH[$source_module]="$module"
+                elif ! echo " ${GRAPH[$source_module]} " | grep -q " $module "; then
+                    GRAPH[$source_module]="${GRAPH[$source_module]} $module"
+                fi
+                ALL_NODES[$source_module]=1
+                ALL_NODES[$module]=1
+            fi
+        fi
+    fi
+done < <(grep -rn "from ['\"].*\.\." --include="*.ts" --include="*.tsx" --include="*.js" src/ 2>/dev/null | head -5000)
+
+# DFS cycle detection
+declare -A VISITED
+declare -A IN_STACK
+CYCLE_COUNT=0
+
+dfs() {
+    local node="$1"
+    local path="$2"
+
+    VISITED[$node]=1
+    IN_STACK[$node]=1
+
+    for dep in ${GRAPH[$node]:-}; do
+        if [[ "${IN_STACK[$dep]:-}" == "1" ]]; then
+            # Found a cycle
+            CYCLE_COUNT=$((CYCLE_COUNT + 1))
+            cycle="$path -> $dep"
+            CYCLES="$CYCLES\n$cycle"
+        elif [[ "${VISITED[$dep]:-}" != "1" ]]; then
+            dfs "$dep" "$path -> $dep"
+        fi
+    done
+
+    IN_STACK[$node]=0
+}
+
+# Run DFS from all nodes
+for node in "${!ALL_NODES[@]}"; do
+    if [[ "${VISITED[$node]:-}" != "1" ]]; then
+        dfs "$node" "$node"
+    fi
+done
+
+# Output
+if $OUTPUT_DOT; then
+    echo "digraph dependencies {"
+    echo "  rankdir=LR;"
+    echo "  node [shape=box];"
+    for node in "${!GRAPH[@]}"; do
+        for dep in ${GRAPH[$node]}; do
+            echo "  \"$node\" -> \"$dep\";"
+        done
+    done
+    echo "}"
+    exit 0
+fi
+
+if $OUTPUT_JSON; then
+    echo "{"
+    echo "  \"modules\": ["
+    first=true
+    for node in "${!ALL_NODES[@]}"; do
+        $first || echo ","
+        first=false
+        echo -n "    {\"name\": \"$node\", \"dependencies\": \"${GRAPH[$node]:-none}\"}"
+    done
+    echo ""
+    echo "  ],"
+    echo "  \"cycle_count\": $CYCLE_COUNT,"
+    echo "  \"cycles\": ["
+    if [[ -n "$CYCLES" ]]; then
+        echo -e "$CYCLES" | tail -n +2 | while read -r cycle; do
+            echo "    \"$cycle\","
+        done
+    fi
+    echo "  ]"
+    echo "}"
+    exit 0
+fi
+
+# Summary
+MODULE_COUNT=${#ALL_NODES[@]}
+EDGE_COUNT=0
+for node in "${!GRAPH[@]}"; do
+    EDGE_COUNT=$((EDGE_COUNT + $(echo "${GRAPH[$node]}" | wc -w | tr -d ' ')))
+done
+
+echo "Modules: $MODULE_COUNT"
+echo "Dependencies: $EDGE_COUNT"
+echo "Cycles: $CYCLE_COUNT"
+echo ""
+
+if [[ $CYCLE_COUNT -gt 0 ]]; then
+    echo "Cycles detected:"
+    echo -e "$CYCLES" | tail -n +2 | head -20
+    echo ""
+    echo "STATUS: FAIL ($CYCLE_COUNT cycles)"
+    exit 1
+else
+    echo "STATUS: PASS (no cycles)"
+    exit 0
+fi

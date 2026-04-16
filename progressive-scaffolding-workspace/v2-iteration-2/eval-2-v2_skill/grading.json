@@ -1,0 +1,42 @@
+{
+  "eval_id": 2,
+  "eval_name": "behavioral-gap-analysis-v2",
+  "grader": "claude",
+  "grade_date": "2026-04-09",
+  "assertions": [
+    {
+      "name": "c-dimensions-not-e",
+      "result": "PASS",
+      "evidence": "Section 1 explicitly headers 'Controllability (C1-C4)' and all 4 dimensions (C1 Config Control, C2 Feature Control, C3 State Injection, C4 Middleware Injection) are used and scored throughout. No E1-E4 notation appears anywhere."
+    },
+    {
+      "name": "o-dimensions-unchanged",
+      "result": "PASS",
+      "evidence": "Section 1 shows 'Observability (O1-O4)' with O1 Semantic Logs (0/1), O2 Correlation Propagation (0/1), O3 Internal State Query (0/1), O4 Event Visibility (0/1). All four dimensions are present and scored."
+    },
+    {
+      "name": "agent-autonomy-focus",
+      "result": "PASS",
+      "evidence": "Section 2 is titled 'CAN AN AGENT SELF-DEBUG A RUNTIME ERROR?' and opens with a direct 'Answer: NO' followed by a full O-D-A-V loop breakdown. Each phase (OBSERVE, DECIDE, ACT, VERIFY) explicitly describes what the agent needs versus what exists. Section 7 reiterates the self-debug question and summarizes blockers. The entire document is centered on agent autonomy."
+    },
+    {
+      "name": "behavioral-gap-reasoning",
+      "result": "PASS",
+      "evidence": "Section 3 'BEHAVIORAL GAP ANALYSIS - WHY EACH GAP MATTERS' explains every gap with a 'Why it matters for autonomy' clause. Examples: C1 explains that runtime config mutation collapses a 4-step process to one atomic call; O1 explains that without structured logs every log-reading task becomes a fragile regex heuristic; O2 explains that without correlation IDs an agent cannot connect log entries to the same request in a multi-component system."
+    },
+    {
+      "name": "injection-point-list",
+      "result": "PASS",
+      "evidence": "Section 5 'INJECTION POINT ANALYSIS' lists 6 specific injection points each with file paths and idioms: (1) C1: src/utils/settings/types.ts + internalWrites.ts with 'Zod schemas with .optional().describe()', (2) O1: src/ink/output.ts + bash/logger.ts with 'Ink boxen + ANSI rendering', (3) C2: src/utils/settings/types.ts + src/utils/bash/featureFlags.ts with 'feature() function from bun:bundle', (4) C3/O3: src/state/AppStateStore.ts + store.ts with 'getState()/setState() + selector pattern', (5) O2: src/query.ts + QueryEngine.ts with 'pipeline context object', (6) C4: src/Tool.ts + tools.ts with 'call(args, context) tool factory'. Each entry names an actual file in the codebase and identifies the existing idiom pattern."
+    }
+  ],
+  "summary": {
+    "total": 5,
+    "passed": 5,
+    "failed": 0
+  },
+  "timing": {
+    "duration_ms": 468137,
+    "total_tokens": 55713
+  }
+}

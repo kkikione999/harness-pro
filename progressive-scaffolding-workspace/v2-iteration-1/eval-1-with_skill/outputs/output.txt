@@ -1,0 +1,268 @@
+================================================================================
+PROGRESSIVE SCAFFOLDING v2 -- ASSESSMENT + PROPOSED PATCHES
+Project: Open-ClaudeCode (Anthropic Claude Code CLI v2.1.88)
+Date: 2026-04-09
+Model: sonnet
+================================================================================
+
+================================================================================
+SECTION 1: BEHAVIORAL ASSESSMENT (v2 Framework)
+================================================================================
+
+Project Classification:
+  Type:          TypeScript/Bun CLI application
+  Source:        1,888 TypeScript files
+  Entry Point:   package/cli.js (Bun-built)
+  Framework:     Ink/React for terminal UI
+  Build System:  Makefile + Bun
+
+Assessment Decision: NOT a content repository -- proceed with scaffolding.
+
+---
+
+BEHAVIORAL GAP MATRIX:
+
+Controllability (C1-C4):
+  C1 Config Control:       0/1  -- No runtime config mutation system
+  C2 Feature Control:      0/1  -- No feature flag infrastructure (compile-time only)
+  C3 State Injection:      0/1  -- No state hooks
+  C4 Middleware:           0/1  -- No middleware pipeline (CLI REPL app)
+
+Observability (O1-O4):
+  O1 Semantic Logs:        0/1  -- Plain text debug logs, not JSON structured
+  O2 Correlation:          0/1  -- No correlation ID propagation in app
+  O3 Internal Query:       0/1  -- No internal state query API
+  O4 Event Visibility:     0/1  -- No event system
+
+Value (V1-V3):
+  V1 Intrusion Delta:      0/1  -- No source changes yet
+  V2 Behavioral Lift:      0/1  -- All 8 C/O gaps open
+  V3 Loop Completeness:     0/1  -- Loop not yet tested
+
+VECTOR SCORE: (C1, C2, C3, C4, O1, O2, O3, O4, V1, V2, V3) = (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+
+---
+
+EXISTING SCAFFOLDING (v1 Surface Wrappers):
+
+  .harness/controllability/start.sh    -- Shell wrapper, adds CORRELATION_ID to shell
+  .harness/controllability/stop.sh     -- Stop running instance
+  .harness/controllability/verify.sh  -- Typed exit codes (0/2/3/4)
+  .harness/controllability/test-auto.sh -- 4-point smoke test -> JSON output
+  .harness/observability/health.sh     -- JSON health status
+  .harness/observability/log.sh        -- Log query (recent/search/follow)
+  .harness/observability/trace.sh     -- Correlation ID injection (shell only)
+  .harness/ci/ci-pipeline.yml         -- GitHub Actions CI template
+
+Assessment: All v1 surface wrappers. They call node package/cli.js and parse
+exit codes. They do NOT inject behavioral patches into the source. The app has
+no runtime config mutation, no structured JSON logs, no feature flags, no state
+injection. The agent must restart the process to see any config change and
+cannot parse structured data from the app.
+
+---
+
+KEY SOURCE FILES FOR INJECTION:
+
+  1. src/utils/config.ts     (1,817 lines) -- Central config, reads process.env
+  2. src/utils/debug.ts      (~350 lines) -- Debug logging, text-based output
+  3. src/utils/log.ts        (362 lines)  -- Error logging, sink architecture
+
+================================================================================
+SECTION 2: TIER RECOMMENDATION
+================================================================================
+
+Recommended: Tier 1 (Config Control) + Tier 2 (Observability) combined
+
+Rationale:
+  - C1 (Config Control) is highest-value: enables runtime config mutation
+  - O1 (Semantic Logs) is second highest: required for O->D->A->V loop
+  - Both have clear injection points in existing source files
+  - Combined intrusion: ~65 lines across 2 files (< 200 line budget)
+  - Enables core O->D->A->V loop:
+      OBSERVE  -> parse structured JSON logs (harnessLog output)
+      DECIDE   -> call setHarnessOverride() to plan mutation
+      ACT      -> execute via inline require or direct function call
+      VERIFY   -> re-parse logs for behavioral change
+
+Escalation Path:
+  Tier 1+2 pass -> Tier 3 (Feature Flags) if runtime toggles needed
+  Tier 3 pass    -> Tier 4 (State Injection) if API mocking needed
+  Tier 4 pass    -> Tier 5 (Full Control Plane) if complete autonomy needed
+
+================================================================================
+SECTION 3: PROPOSED PATCHES (Pending Approval)
+================================================================================
+
+=== PATCH 1: Config Control Injection (Tier 1) ===
+
+File:   src/utils/config.ts
+Type:   Type A -- Config Control Injection
+Lines:  ~21 lines total
+Activation: HARNESS_CONTROL=1
+
+--- Part 1A: Add harness config functions (at EOF, after line 1817) ---
+
++ // [HARNESS-INJECT-START: config_control]
++ /**
++  * Harness Config Control -- runtime config mutation without restart.
++  * Activated by HARNESS_CONTROL=1 environment variable.
++  */
++ let _harnessOverrides: Record<string, unknown> = {}
++
++ export function setHarnessOverride(key: string, value: unknown): void {
++   _harnessOverrides[key] = value
++ }
++
++ export function getHarnessConfig<T = unknown>(key: string, fallback: T): T {
++   if (process.env.HARNESS_CONTROL !== '1') return fallback
++   return (_harnessOverrides[key] ?? fallback) as T
++ }
++ // [HARNESS-INJECT-END: config_control]
+
+--- Part 1B: Patch shouldSkipPluginAutoupdate() (line 1713) ---
+
+Current:
+  export function shouldSkipPluginAutoupdate(): boolean {
+    return (
+      isAutoUpdaterDisabled() &&
+      !isEnvTruthy(process.env.FORCE_AUTOUPDATE_PLUGINS)
+    )
+  }
+
+Proposed (wrap body with harness override check):
+  export function shouldSkipPluginAutoupdate(): boolean {
+    if (process.env.HARNESS_CONTROL === '1') {
+      return getHarnessConfig('skip_plugin_autoupdate',
+        !isEnvTruthy(process.env.FORCE_AUTOUPDATE_PLUGINS))
+    }
+    return (
+      isAutoUpdaterDisabled() &&
+      !isEnvTruthy(process.env.FORCE_AUTOUPDATE_PLUGINS)
+    )
+  }
+
+--- Part 1C: Patch getAutoUpdaterDisabledReason() (line 1739) ---
+
+Current:
+  export function getAutoUpdaterDisabledReason(): AutoUpdaterDisabledReason | null {
+    if (process.env.NODE_ENV === 'development') { return { type: 'development' } }
+    if (isEnvTruthy(process.env.DISABLE_AUTOUPDATER)) {
+      return { type: 'env', envVar: 'DISABLE_AUTOUPDATER' }
+    }
+    ...
+
+Proposed (insert harness override block after NODE_ENV check):
+  // [HARNESS-INJECT-START: config_control_patch_1]
+  if (process.env.HARNESS_CONTROL === '1') {
+    const override = getHarnessConfig<string | null>('autoupdater_disabled', null)
+    if (override === 'development') return { type: 'development' }
+    if (override === 'env') return { type: 'env', envVar: 'DISABLE_AUTOUPDATER' }
+    if (override === 'config') return { type: 'config' }
+  }
+  // [HARNESS-INJECT-END: config_control_patch_1]
+
+
+=== PATCH 2: Structured Log Injection (Tier 2) ===
+
+File:   src/utils/debug.ts
+Type:   Type B -- Structured Log Injection
+Lines:  ~39 lines total
+Activation: HARNESS_CONTROL=1
+
+--- Part 2A: Add harness structured logging functions (after line 226) ---
+
++ // [HARNESS-INJECT-START: structured_log]
++ export type HarnessLogLevel = 'DEBUG' | 'INFO' | 'WARN' | 'ERROR'
++
++ export interface HarnessLogEntry {
++   level: HarnessLogLevel
++   timestamp: string
++   correlationId: string
++   component: string
++   message: string
++   metadata: Record<string, unknown>
++ }
++
++ let _harnessCorrelationId: string | null = null
++ function getHarnessCorrelationId(): string {
++   if (_harnessCorrelationId === null)
++     _harnessCorrelationId = process.env.HARNESS_CORRELATION_ID || ''
++   return _harnessCorrelationId
++ }
++
++ export function harnessLog(
++   level: HarnessLogLevel,
++   message: string,
++   metadata: Record<string, unknown> = {},
++   component = 'app'
++ ): HarnessLogEntry | null {
++   if (process.env.HARNESS_CONTROL !== '1') return null
++   const entry: HarnessLogEntry = {
++     level, timestamp: new Date().toISOString(),
++     correlationId: getHarnessCorrelationId(),
++     component, message, metadata,
++   }
++   process.stdout.write(JSON.stringify(entry) + '\n')
++   return entry
++ }
++
++ export const harnessInfo  = (m, meta, c) => harnessLog('INFO',  m, meta, c)
++ export const harnessWarn  = (m, meta, c) => harnessLog('WARN',  m, meta, c)
++ export const harnessError = (m, meta, c) => harnessLog('ERROR', m, meta, c)
++ export const harnessDebug = (m, meta, c) => harnessLog('DEBUG', m, meta, c)
++
++ export function parseHarnessLog(raw: string): HarnessLogEntry | null {
++   try {
++     const p = JSON.parse(raw.trim()) as HarnessLogEntry
++     if (typeof p.level === 'string' && typeof p.timestamp === 'string'
++         && typeof p.message === 'string') return p
++   } catch { /* not JSON */ }
++   return null
++ }
++ // [HARNESS-INJECT-END: structured_log]
+
+--- Part 2B: Patch logForDebugging() to emit JSON (lines 203-228) ---
+
+Current logForDebugging() body (after shouldLogDebugMessage check):
+  // Multiline handling...
+  const timestamp = new Date().toISOString()
+  const output = `${timestamp} [${level.toUpperCase()}] ${message.trim()}\n`
+  ...
+
+Proposed (insert harness JSON emission after shouldLogDebugMessage check):
+  // [HARNESS-INJECT-START: structured_log_patch_1]
+  if (process.env.HARNESS_CONTROL === '1') {
+    const harnessLevel = (level === 'verbose' ? 'DEBUG' : level.toUpperCase()) as HarnessLogLevel
+    harnessLog(harnessLevel, message.trim(), { _debugLevel: level })
+  }
+  // [HARNESS-INJECT-END: structured_log_patch_1]
+
+
+================================================================================
+SECTION 4: PATCH SUMMARY
+================================================================================
+
+| # | File                  | Capability  | Type              | Lines |
+|---|-----------------------|-------------|-------------------|-------|
+| 1A| src/utils/config.ts  | C1          | Add functions     | ~28   |
+| 1B| src/utils/config.ts  | C1          | Patch 2 sites     | ~10   |
+| 2A| src/utils/debug.ts    | O1, O2      | Add functions     | ~66   |
+| 2B| src/utils/debug.ts    | O1          | Patch function    | ~7    |
+
+Total: ~111 lines across 2 files (within Tier 1+2 budgets)
+Activation: HARNESS_CONTROL=1 (zero intrusion when unset)
+
+EXPECTED BEHAVIORAL CHANGES AFTER INJECTION:
+  C1 Config Control:    0->1  (setHarnessOverride / getHarnessConfig callable)
+  O1 Semantic Logs:     0->1  (logForDebugging emits JSON when HARNESS_CONTROL=1)
+  O2 Correlation:       0->1  (correlationId flows through harnessLog entries)
+  O3 Internal Query:    0->1  (parseHarnessLog extracts structured data from stdout)
+
+ROLLBACK COMMAND:
+  find src -type f \( -name "*.ts" -o -name "*.tsx" \) \
+    -exec sed -i '' '/\/\/ \[HARNESS-INJECT-START:.*\]/,/\/\/ \[HARNESS-INJECT-END:.*\]/d' {} \;
+
+================================================================================
+END OF ASSESSMENT
+================================================================================

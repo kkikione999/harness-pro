@@ -1,0 +1,227 @@
+# PATCH PROPOSAL #2: Tier 2 - Observability (Structured Log Module)
+# File: src/harness.ts (NEW FILE)
+# Lines Added: 58
+# Capability: O1 (Semantic Logs), O2 (Correlation Propagation)
+# Status: PENDING APPROVAL
+
+================================================================================
+# NEW FILE CONTENT
+# File: src/harness.ts
+# Purpose: Dedicated harness observability module
+================================================================================
+
+/**
+ * Harness Control Plane - Observability Module
+ *
+ * Provides structured JSON logging for agent observability.
+ * Output format compatible with O→D→A→V loop verification.
+ *
+ * Activate: Set HARNESS_CONTROL=1 environment variable
+ *
+ * Usage:
+ *   import { harnessLog, setCorrelationId } from './harness.js'
+ *   harnessLog('tool_executed', { tool: 'Read', file: '/path/to/file' })
+ */
+
+import { feature } from 'bun:bundle'
+
+// Harness-enabled flag (matches existing codebase pattern)
+const isHarnessEnabled = (): boolean => {
+  return process.env.HARNESS_CONTROL === '1' || feature('HARNESS_MODE') === true
+}
+
+// Correlation ID for request tracing
+let _correlationId: string = process.env.HARNESS_CORRELATION_ID || ''
+
+/**
+ * Set the correlation ID for this harness session.
+ * Propagates through all subsequent harnessLog() calls.
+ * @param id Correlation ID (e.g., session ID, request ID)
+ */
+export function setCorrelationId(id: string): void {
+  _correlationId = id
+}
+
+/**
+ * Get the current correlation ID.
+ * @returns Current correlation ID or empty string
+ */
+export function getCorrelationId(): string {
+  return _correlationId
+}
+
+// [HARNESS-INJECT-START: structured_log]
+/**
+ * Structured log entry schema.
+ * All harnessLog() calls output JSON matching this schema.
+ */
+export interface HarnessLogEntry {
+  level: 'DEBUG' | 'INFO' | 'WARN' | 'ERROR'
+  timestamp: string        // ISO 8601 format
+  correlationId: string   // Request/session correlation ID
+  component: string       // Source component (e.g., 'config', 'tool', 'api')
+  event: string           // Event name
+  message?: string        // Human-readable message
+  metadata: Record<string, unknown>  // Structured event data
+  duration_ms?: number    // Optional duration for timing events
+}
+
+/**
+ * Emit a structured log entry to stdout.
+ * Format: JSON with schema {level, timestamp, correlationId, component, event, message?, metadata, duration_ms?}
+ *
+ * @param event Event name (e.g., 'tool_executed', 'config_changed')
+ * @param metadata Event metadata (any JSON-serializable object)
+ * @param options Optional: level, component, message, duration_ms
+ *
+ * Usage:
+ *   harnessLog('tool_executed', { tool: 'Read', path: '/file.txt' })
+ *   harnessLog('error', { code: 'TIMEOUT' }, { level: 'ERROR', component: 'api' })
+ */
+export function harnessLog(
+  event: string,
+  metadata: Record<string, unknown> = {},
+  options?: {
+    level?: 'DEBUG' | 'INFO' | 'WARN' | 'ERROR'
+    component?: string
+    message?: string
+    duration_ms?: number
+  }
+): HarnessLogEntry | null {
+  if (!isHarnessEnabled()) {
+    return null
+  }
+
+  const entry: HarnessLogEntry = {
+    level: options?.level ?? 'INFO',
+    timestamp: new Date().toISOString(),
+    correlationId: _correlationId,
+    component: options?.component ?? 'harness',
+    event,
+    message: options?.message,
+    metadata,
+    duration_ms: options?.duration_ms,
+  }
+
+  // Write to stdout as JSON
+  process.stdout.write(JSON.stringify(entry) + '\n')
+
+  return entry
+}
+
+/**
+ * Parse a JSON log line into a HarnessLogEntry.
+ * Useful for agent-side log processing.
+ *
+ * @param raw Raw JSON string from stdout
+ * @returns Parsed log entry or null if invalid
+ *
+ * Usage:
+ *   const entry = parseHarnessLog('{"level":"INFO","event":"tool_executed"}')
+ *   if (entry) { console.log(entry.event) }
+ */
+export function parseHarnessLog(raw: string): HarnessLogEntry | null {
+  try {
+    const parsed = JSON.parse(raw)
+    if (parsed && typeof parsed === 'object' && 'event' in parsed) {
+      return parsed as HarnessLogEntry
+    }
+    return null
+  } catch {
+    return null
+  }
+}
+
+/**
+ * Create a timing scope for measuring operation duration.
+ * Returns a function to call when the operation completes.
+ *
+ * @param event Event name for the log entry
+ * @param metadata Initial metadata
+ * @returns End function to call when operation completes
+ *
+ * Usage:
+ *   const endTiming = startHarnessTiming('api_call', { endpoint: '/users' })
+ *   // ... do work ...
+ *   endTiming() // Logs with duration_ms automatically calculated
+ */
+export function startHarnessTiming(
+  event: string,
+  metadata: Record<string, unknown> = {},
+  options?: { level?: 'DEBUG' | 'INFO' | 'WARN' | 'ERROR'; component?: string }
+): () => void {
+  const startTime = Date.now()
+
+  return () => {
+    const duration_ms = Date.now() - startTime
+    harnessLog(event, metadata, {
+      ...options,
+      duration_ms,
+    })
+  }
+}
+// [HARNESS-INJECT-END: structured_log]
+
+/**
+ * Attach harness observability to existing analytics sink.
+ * This enables O4 (Event Visibility) by making events queryable.
+ *
+ * @param attachFn Function that attaches a handler to receive all events
+ *
+ * Usage (in main.tsx):
+ *   import { attachHarnessObserver } from './harness.js'
+ *   attachHarnessObserver((event, metadata) => {
+ *     // Forward to your event system
+ *     console.log('Event:', event, metadata)
+ *   })
+ */
+type HarnessObserver = (event: string, metadata: Record<string, unknown>) => void
+const _observers: HarnessObserver[] = []
+
+export function attachHarnessObserver(observer: HarnessObserver): void {
+  _observers.push(observer)
+}
+
+export function _notifyHarnessObservers(event: string, metadata: Record<string, unknown>): void {
+  for (const observer of _observers) {
+    try {
+      observer(event, metadata)
+    } catch {
+      // Observer failed, continue with others
+    }
+  }
+}
+
+================================================================================
+# RATIONALE
+
+Why a new file instead of injecting into existing code?
+- Zero intrusion into existing files (except main.tsx for initialization)
+- Self-contained module that can be imported anywhere
+- Follows the project's pattern of utility modules
+- Easy to remove or disable (just don't import it)
+
+Agent Usage Examples:
+```typescript
+import { harnessLog, setCorrelationId, parseHarnessLog } from './harness.js'
+
+// Set correlation ID for tracing
+setCorrelationId('session-123')
+
+// Log structured events
+harnessLog('tool_executed', { tool: 'Read', path: '/file.txt' })
+harnessLog('config_changed', { key: 'timeout', old: 3000, new: 5000 })
+harnessLog('error', { code: 'TIMEOUT' }, { level: 'ERROR' })
+
+// Parse logs for verification
+const logs = stdout.split('\n').filter(line => line.startsWith('{'))
+const entry = parseHarnessLog(logs[0])
+if (entry?.event === 'tool_executed') {
+  console.log('Tool used:', entry.metadata.tool)
+}
+```
+
+Output Format Example:
+```json
+{"level":"INFO","timestamp":"2026-04-09T12:34:56.789Z","correlationId":"session-123","component":"harness","event":"tool_executed","message":null,"metadata":{"tool":"Read","path":"/file.txt"},"duration_ms":null}
+```

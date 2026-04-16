@@ -1,0 +1,36 @@
+{
+  "run_id": "eval-1-with_skill",
+  "timestamp": "2026-04-08T19:36:00Z",
+  "expectations": [
+    {
+      "text": "identifies-as-software-project",
+      "passed": true,
+      "evidence": "Both assessment-report.md and assessment-report-final.md contain 'Step 1.0: Pre-Check -- Is This a Software Project?' with 'Result: YES. This is a software project.' Evidence includes package.json with bin field, ~1888 TypeScript source files, and CLI bundle."
+    },
+    {
+      "text": "covers-all-dimensions",
+      "passed": true,
+      "evidence": "assessment-report.md and assessment-report-final.md both contain tables for all 11 dimensions: Controllability (E1 Execute, E2 Intervene, E3 Input, E4 Orchestrate), Observability (O1 Feedback, O2 Persist, O3 Queryable, O4 Attribute), Verification (V1 Exit Code, V2 Semantic, V3 Automated). Each dimension has a Level and Evidence column."
+    },
+    {
+      "text": "detects-no-tests",
+      "passed": true,
+      "evidence": "V1 Exit Code assessed at Level 1 with evidence: 'No \"test\" script in package.json. No Makefile with test target.' V3 Automated at Level 1: 'No CI/CD (no .github/workflows/). No pre-commit hooks. No automated verification triggers.' assessment-report-final.md re-assesses after scaffolding raises V1 to Level 2 and V3 to Level 2."
+    },
+    {
+      "text": "detects-existing-telemetry",
+      "passed": true,
+      "evidence": "assessment-report.md has an explicit 'Note' section under Observability: 'The automated observability probe correctly detected the project's built-in telemetry: src/utils/telemetry/ (9 files): logger.ts, instrumentation.ts, sessionTracing.ts, bigqueryExporter.ts, perfettoTracing.ts, events.ts, etc. src/services/analytics/ (9 files): datadog.ts, firstPartyEventLogger.ts, sink.ts, config.ts, etc.' assessment-report-final.md re-lists all files under 'Telemetry infrastructure detected by probe'. O2 Persist scored at Level 3."
+    },
+    {
+      "text": "generates-harness-directory",
+      "passed": true,
+      "evidence": "harness-files/ directory exists with structured subdirectories: ci/ (ci-pipeline.yml), controllability/ (Makefile, start.sh, stop.sh, verify.sh, test-auto.sh, analyze-deps.sh, lint-import-direction.sh), observability/ (log.sh, health.sh, trace.sh, metrics.sh), and a root Makefile. assessment-report-final.md includes a 'Generated Scaffolding Inventory' tree."
+    },
+    {
+      "text": "scripts-relevant-to-typescript",
+      "passed": true,
+      "evidence": "Multiple scripts contain TypeScript-specific references: start.sh uses 'node \"$CLI_PATH\"' to launch the CLI; analyze-deps.sh scans '--include=\"*.ts\" --include=\"*.tsx\"' for import analysis; lint-import-direction.sh uses '--include=\"*.ts\" --include=\"*.tsx\"'; health.sh counts .ts/.tsx files; Makefile status target uses 'find $(PROJECT_ROOT)/src -name \"*.ts\" -o -name \"*.tsx\"'; verify.sh checks directories for .ts/.tsx file counts."
+    }
+  ]
+}

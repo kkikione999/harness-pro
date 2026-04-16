@@ -1,0 +1,31 @@
+{
+  "assessment": {
+    "dimensions": {
+      "controllability": ["E1", "E2", "E3", "E4"],
+      "observability": ["O1", "O2", "O3", "O4", "V1", "V2", "V3"]
+    },
+    "levels": {
+      "1": "None/Minimal - No mechanism present",
+      "2": "Basic - Simple mechanism exists but limited",
+      "3": "Moderate - Functional mechanism with some gaps",
+      "4": "Full - Comprehensive mechanism fully implemented"
+    }
+  },
+  "thresholds": {
+    "controllability": {
+      "E1": { "min": 1, "max": 4 },
+      "E2": { "min": 1, "max": 4 },
+      "E3": { "min": 1, "max": 4 },
+      "E4": { "min": 1, "max": 4 }
+    },
+    "observability": {
+      "O1": { "min": 1, "max": 4 },
+      "O2": { "min": 1, "max": 4 },
+      "O3": { "min": 1, "max": 4 },
+      "O4": { "min": 1, "max": 4 },
+      "V1": { "min": 1, "max": 4 },
+      "V2": { "min": 1, "max": 4 },
+      "V3": { "min": 1, "max": 4 }
+    }
+  }
+}

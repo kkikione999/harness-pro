@@ -1,0 +1,42 @@
+{
+  "eval_id": 1,
+  "eval_name": "assess-and-inject-open-claudecode-v2",
+  "graded_at": "2026-04-09",
+  "results": [
+    {
+      "name": "uses-new-dimensions",
+      "result": "PASS",
+      "evidence": "Output tables explicitly use C1-C4 (Controllability) and O1-O4 (Observability) and V1-V3 (Value) dimensions. E1-E4 dimensions do not appear anywhere in the output."
+    },
+    {
+      "name": "code-injection-not-files",
+      "result": "PASS",
+      "evidence": "Proposed patches include [HARNESS-INJECT-START/END] markers in source files. Modified src_bootstrap_state.ts contains markers at lines 1759-1770 (config_control injection, 12 lines). Modified src_utils_log.ts contains markers at lines 364-406 (structured_log injection, 43 lines). No .harness/ wrapper scripts are used."
+    },
+    {
+      "name": "injection-point-analysis",
+      "result": "PASS",
+      "evidence": "Output identifies two specific files with line ranges: (1) src/bootstrap/state.ts at '~1758 (end of file)' with rationale about being a central state module, and (2) src/utils/log.ts at '~362 (end of file)' with rationale about being the natural home for structured harness logging. Both include existing idioms noted."
+    },
+    {
+      "name": "shows-approval-flow",
+      "result": "PASS",
+      "evidence": "Output contains a clear two-phase flow: (1) PATCH PROPOSALS section (lines 59-151) showing proposed patches with code diffs, and (2) APPROVAL & INJECTION / INJECT — Applying Patches section (lines 154-183) where patches are actually applied with confirmation output."
+    },
+    {
+      "name": "tier-recommendation",
+      "result": "PASS",
+      "evidence": "Output explicitly states 'Recommended starting tier: Tier 1 (Config Control) — minimal intrusion, foundational capability' at the conclusion of the ASSESSMENT section (line 39)."
+    }
+  ],
+  "summary": {
+    "total": 5,
+    "passed": 5,
+    "failed": 0
+  },
+  "timing": {
+    "total_tokens": 54656,
+    "duration_ms": 183143,
+    "duration_seconds": 183.1
+  }
+}

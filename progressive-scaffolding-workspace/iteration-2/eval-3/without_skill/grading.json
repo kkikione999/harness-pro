@@ -1,0 +1,33 @@
+{
+  "expectations": [
+    {
+      "text": "Baseline generates observability scripts",
+      "passed": true,
+      "evidence": "health.sh, metrics.sh, report.sh, trace.sh generated"
+    },
+    {
+      "text": "Scripts are functional",
+      "passed": true,
+      "evidence": "health.sh tested, returns JSON status"
+    }
+  ],
+  "summary": {
+    "passed": 2,
+    "failed": 0,
+    "total": 2,
+    "pass_rate": 1.0
+  },
+  "execution_metrics": {
+    "total_tokens": 35734,
+    "total_duration_seconds": 95.7
+  },
+  "timing": {
+    "executor_duration_seconds": 95.7,
+    "total_duration_seconds": 95.7
+  },
+  "claims": [],
+  "eval_feedback": {
+    "suggestions": [],
+    "overall": "Baseline generated custom observability scripts"
+  }
+}

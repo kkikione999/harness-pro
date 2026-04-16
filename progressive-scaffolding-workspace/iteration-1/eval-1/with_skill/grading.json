@@ -1,0 +1,82 @@
+{
+  "expectations": [
+    {
+      "text": "Has assessment report (file exists)",
+      "passed": true,
+      "evidence": "assessment-report.md exists at /Users/josh_folder/harness-pro-for-vibe/harness-blogs/progressive-scaffolding-workspace/iteration-1/eval-1/with_skill/outputs/assessment-report.md"
+    },
+    {
+      "text": "Report includes controllability assessment",
+      "passed": true,
+      "evidence": "Section '## Controllability (E1-E4)' present with table showing E1-E4 levels and evidence"
+    },
+    {
+      "text": "Report includes observability assessment",
+      "passed": true,
+      "evidence": "Section '## Observability (O1-O4)' present with table showing O1-O4 levels and evidence"
+    },
+    {
+      "text": "Report includes verification assessment",
+      "passed": true,
+      "evidence": "Section '## Verification (V1-V3)' present with table showing V1-V3 levels and evidence"
+    },
+    {
+      "text": "Report includes E1-E4 dimensions",
+      "passed": true,
+      "evidence": "Controllability table includes E1 (Level 1), E2 (Level 2), E3 (Level 2), E4 (Level 1) with evidence descriptions"
+    },
+    {
+      "text": "Report includes O1-O4 dimensions",
+      "passed": true,
+      "evidence": "Observability table includes O1 (Level 2), O2 (Level 3), O3 (Level 3), O4 (Level 2) with evidence descriptions"
+    },
+    {
+      "text": "Report includes V1-V3 dimensions",
+      "passed": true,
+      "evidence": "Verification table includes V1 (Level 1), V2 (Level 1), V3 (Level 1) with evidence descriptions"
+    }
+  ],
+  "summary": {
+    "passed": 7,
+    "failed": 0,
+    "total": 7,
+    "pass_rate": 1.0
+  },
+  "execution_metrics": {
+    "total_tokens": 37963,
+    "total_duration_seconds": 109.4
+  },
+  "timing": {
+    "executor_duration_seconds": 109.4,
+    "total_duration_seconds": 109.4
+  },
+  "claims": [
+    {
+      "claim": "Controllability score 6/12 (Level 1-2)",
+      "type": "factual",
+      "verified": true,
+      "evidence": "E1=1, E2=2, E3=2, E4=1 totals 6/12"
+    },
+    {
+      "claim": "Observability score 10/12 (Level 2-3)",
+      "type": "factual",
+      "verified": true,
+      "evidence": "O1=2, O2=3, O3=3, O4=2 totals 10/12"
+    },
+    {
+      "claim": "Verification score 3/9 (Level 1 only)",
+      "type": "factual",
+      "verified": true,
+      "evidence": "V1=1, V2=1, V3=1 totals 3/9"
+    }
+  ],
+  "user_notes_summary": {
+    "uncertainties": [],
+    "needs_review": [],
+    "workarounds": []
+  },
+  "eval_feedback": {
+    "suggestions": [],
+    "overall": "No suggestions, evals look solid"
+  }
+}

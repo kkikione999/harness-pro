@@ -1,0 +1,44 @@
+{
+  "skill_name": "progressive-scaffolding",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Add scaffolding to /Users/josh_folder/Open-ClaudeCode",
+      "expected_output": "Full assessment report with dimension levels (E1-E4, O1-O4, V1-V3) for a TypeScript CLI project, followed by generated .harness/ directory with controllability and observability scripts tailored to the project.",
+      "files": [],
+      "assertions": [
+        {"name": "identifies-as-software-project", "check": "Report classifies the project as a software/code project, not a content repository"},
+        {"name": "covers-all-dimensions", "check": "Report covers all 11 dimensions: E1-E4, O1-O4, V1-V3"},
+        {"name": "detects-no-tests", "check": "Report identifies absence of test infrastructure"},
+        {"name": "detects-existing-telemetry", "check": "Report recognizes existing telemetry/analytics utilities"},
+        {"name": "generates-harness-directory", "check": "A .harness or scaffolding directory with generated scripts exists"},
+        {"name": "scripts-relevant-to-typescript", "check": "Scripts reference npm, node, npx, tsx, bun, or TypeScript-specific tooling"}
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Assess the scaffolding state of /Users/josh_folder/Open-ClaudeCode and tell me what's missing for autonomous agent operation",
+      "expected_output": "Assessment report with gap analysis showing current levels for each dimension, what's present (e.g. telemetry utils), what's missing (e.g. test runner, CI pipeline), and concrete improvement recommendations.",
+      "files": [],
+      "assertions": [
+        {"name": "identifies-project-type", "check": "Report identifies project as TypeScript/Node.js CLI"},
+        {"name": "notes-no-ci", "check": "Report notes absence of CI/CD pipeline"},
+        {"name": "notes-no-tests", "check": "Report notes absence of test infrastructure"},
+        {"name": "recognizes-existing-observability", "check": "Report recognizes existing telemetry/analytics"},
+        {"name": "provides-concrete-recommendations", "check": "Report provides concrete actionable recommendations"}
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Generate observability scripts for /Users/josh_folder/Open-ClaudeCode",
+      "expected_output": "Generated .harness/observability/ directory with log.sh, metrics.sh, health.sh, trace.sh scripts adapted for a TypeScript/Node.js CLI project, plus assessment of observability dimensions O1-O4.",
+      "files": [],
+      "assertions": [
+        {"name": "generates-observability-scripts", "check": "At least 2 observability scripts generated"},
+        {"name": "scripts-are-executable-logic", "check": "Scripts contain actual executable logic, not just placeholders"},
+        {"name": "references-project-structure", "check": "Scripts reference actual project structure (src/, package/, telemetry)"},
+        {"name": "assesses-observability-dimensions", "check": "Output includes assessment of O1-O4 dimensions"}
+      ]
+    }
+  ]
+}

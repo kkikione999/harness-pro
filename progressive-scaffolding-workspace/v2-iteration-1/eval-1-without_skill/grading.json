@@ -1,0 +1,36 @@
+{
+  "eval_id": 1,
+  " "progressive-scaffolding assessment + scaffolding generation",
+  "assertions": [
+    {
+      "name": "uses-new-dimensions",
+      "text": "Output uses C1-C4/O1-O4/V1-V3 dimensions, not E1-E4",
+      "passed": false,
+      "evidence": "The assessment report explicitly uses E1-E4 (Controllability Assessment section header says 'E1-E4'). The controllability section uses labels E1_EXECUTE, E2_INTERVENE, E3_INPUT, E4_ORCHESTRATE. Observability uses O1-O4 (correct). Verification uses V1-V3 (correct). The new dimension naming (C1-C4) is not used anywhere in the output -- E1-E4 is used throughout instead."
+    },
+    {
+      "name": "code-injection-not-files",
+      "text": "Output proposes code injections with [HARNESS-INJECT-START] markers, not just .harness/ wrapper scripts",
+      "passed": false,
+      "evidence": "All generated scaffolding consists of standalone wrapper scripts in .harness.new/: Makefile, start.sh, stop.sh, verify.sh, test-auto.sh, analyze-deps.sh, lint-import-direction.sh, log.sh, health.sh, trace.sh, ci-pipeline.yml. No [HARNESS-INJECT-START] or [HARNESS-INJECT-END] markers appear anywhere in the output. No code injections into existing source files (e.g., src/main.tsx) are proposed."
+    },
+    {
+      "name": "injection-point-analysis",
+      "text": "Output identifies specific files and line ranges for injection points",
+      "passed": false,
+      "evidence": "The assessment lists source files as evidence for observability levels (e.g., 'correlation IDs in src/main.tsx, src/tools/AgentTool/AgentTool.tsx, src/tasks/RemoteAgentTask/...') but these are listed as existing trace infrastructure, not as proposed injection targets with line ranges. No proposed injection points include line numbers or line ranges (e.g., no format like 'src/main.tsx:50-100'). The output does not analyze where in source files new code should be injected."
+    },
+    {
+      "name": "shows-approval-flow",
+      "text": "Output shows patches before applying (PROPOSE + APPROVE phases)",
+      "passed": false,
+      "evidence": "The output directly generates and lists scaffolding files without any PROPOSE or APPROVE phase. There is no diff/patch shown before application, no approval gate, and no indication that the user was asked to review proposed changes before they were generated. The scaffolding was produced in a single pass with no review step."
+    },
+    {
+      "name": "tier-recommendation",
+      "text": "Output recommends a specific starting tier (0-5)",
+      "passed": false,
+      "evidence": "The assessment report has no explicit tier recommendation. It uses a dimension-based scorecard (E1-E4, O1-O4, V1-V3) and reports 'USABLE: YES (all 9 dimensions meet or exceed Level 2)' but never states 'Recommended starting tier: X' or any tier from the 0-5 scale. The prompt mentioned 'Focus on Tier 1 and Tier 2' but the output did not recommend or justify a starting tier."
+    }
+  ]
+}

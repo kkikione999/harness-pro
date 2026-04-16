@@ -1,0 +1,285 @@
+{
+  "project": "Open-ClaudeCode",
+  "path": "/Users/josh_folder/Open-ClaudeCode",
+  "version": "2.1.88",
+  "assessment_date": "2026-04-09",
+  "overall_coverage_percent": 35,
+  "dimensions": [
+    {
+      "id": "execute-code",
+      "name": "Ability to Execute Code",
+      "coverage_percent": 5,
+      "grade": "F",
+      "blocking_for_autonomous": true,
+      "present": [
+        "package/cli.js (pre-compiled 12.5MB bundle)",
+        "src/utils/sandbox/sandbox-adapter.ts",
+        "src/utils/Shell.ts (shell execution with 30min timeout)",
+        "src/tools/BashTool/ (full bash execution with security)",
+        "src/tools/PowerShellTool/ (Windows support)"
+      ],
+      "missing": [
+        "tsconfig.json",
+        "Root package.json with devDependencies",
+        "Build scripts (Makefile, build.ts, etc.)",
+        "Type checker (tsc --noEmit)",
+        "Bundler configuration",
+        "Any way to compile modified source back to runnable binary"
+      ]
+    },
+    {
+      "id": "intervene-stop",
+      "name": "Ability to Intervene/Stop",
+      "coverage_percent": 75,
+      "grade": "B",
+      "blocking_for_autonomous": false,
+      "present": [
+        "src/utils/abortController.ts",
+        "src/hooks/useCancelRequest.ts",
+        "src/utils/gracefulShutdown.ts",
+        "src/hooks/useCanUseTool.tsx (permission gating)",
+        "src/hooks/toolPermission/handlers/ (interactive, coordinator, swarm)",
+        "src/tools/TaskStopTool/",
+        "src/tools/BashTool/destructiveCommandWarning.ts",
+        "src/utils/permissions/bypassPermissionsKillswitch.ts",
+        "src/entrypoints/sdk/controlSchemas.ts (SDKControlCancelRequest)"
+      ],
+      "missing": [
+        "Automated supervisor that can programmatically invoke stop/intervene",
+        "Headless intervention interface decoupled from terminal UI"
+      ]
+    },
+    {
+      "id": "provide-input",
+      "name": "Ability to Provide Input",
+      "coverage_percent": 50,
+      "grade": "C",
+      "blocking_for_autonomous": false,
+      "present": [
+        "src/tools/AskUserQuestionTool/",
+        "src/hooks/useTextInput.ts",
+        "src/hooks/useVimInput.ts",
+        "src/hooks/usePasteHandler.ts",
+        "src/hooks/useVoice.ts",
+        "src/hooks/useInputBuffer.ts",
+        "src/commands/ (101 slash commands)",
+        "src/screens/REPL.tsx (main interactive loop)"
+      ],
+      "missing": [
+        "Programmatic input feed (no test harness or scriptable input)",
+        "Input recording/replay for automated scenarios",
+        "Structured API for injecting user messages without terminal"
+      ]
+    },
+    {
+      "id": "orchestrate-workflows",
+      "name": "Ability to Orchestrate Workflows",
+      "coverage_percent": 70,
+      "grade": "B-",
+      "blocking_for_autonomous": false,
+      "present": [
+        "src/services/tools/toolOrchestration.ts (concurrent + sequential)",
+        "src/tools/AgentTool/ (sub-agent forking, resumption, memory)",
+        "src/tools/TaskCreateTool/, TaskGetTool/, TaskListTool/, TaskUpdateTool/, TaskStopTool/",
+        "src/tools/TeamCreateTool/, TeamDeleteTool/",
+        "src/tools/SendMessageTool/",
+        "src/tools/ScheduleCronTool/ (create, delete, list)",
+        "src/remote/RemoteSessionManager.ts",
+        "plugins/ (13 official plugins with agents, commands, hooks)",
+        "src/tools/TodoWriteTool/",
+        "src/tools/SleepTool/",
+        "src/coordinator/coordinatorMode.ts",
+        "src/hooks/useSwarmInitialization.ts, useInboxPoller.ts, useMailboxBridge.ts"
+      ],
+      "missing": [
+        "External workflow orchestrator / state machine API",
+        "Programmatic SDK harness for driving workflows without terminal",
+        "Workflow definition language or DAG specification"
+      ]
+    },
+    {
+      "id": "see-feedback",
+      "name": "Ability to See Feedback",
+      "coverage_percent": 45,
+      "grade": "C",
+      "blocking_for_autonomous": true,
+      "present": [
+        "src/cost-tracker.ts (token counts, USD costs, durations)",
+        "src/services/toolUseSummary/ (human-readable tool summaries)",
+        "src/hooks/useDiffData.ts, useTurnDiffs.ts",
+        "src/hooks/useElapsedTime.ts",
+        "src/utils/headlessProfiler.ts",
+        "src/context/fpsMetrics.tsx",
+        "src/hooks/useBackgroundTaskNavigation.ts",
+        "src/hooks/useTaskListWatcher.ts",
+        "src/services/analytics/ (Datadog + first-party, Anthropic-internal only)"
+      ],
+      "missing": [
+        "Structured telemetry API / event stream",
+        "Metrics export endpoint for external consumption",
+        "Structured log sink (all feedback goes to terminal UI)",
+        "Health check endpoint",
+        "Observability integration (OpenTelemetry, etc.)"
+      ]
+    },
+    {
+      "id": "persist-logs",
+      "name": "Ability to Persist Logs",
+      "coverage_percent": 80,
+      "grade": "A-",
+      "blocking_for_autonomous": false,
+      "present": [
+        "src/utils/sessionStorage.ts (5,105 lines - JSONL transcript persistence)",
+        "src/utils/log.ts (session titles, file naming)",
+        "src/services/vcr.ts (cassette recording for test fixtures)",
+        "src/utils/asciicast.ts (terminal session recording)",
+        "src/services/internalLogging.ts (container-aware logging)",
+        "src/utils/diagLogs.ts (PII-stripped diagnostics)",
+        "src/utils/debug.ts (development debug output)",
+        "src/utils/fileHistory.ts (file change snapshots)",
+        "recordTranscript() (full conversation persistence)",
+        "src/services/compact/ (context window management with snapshots)"
+      ],
+      "missing": [
+        "Remote log aggregation",
+        "Structured log format standardization",
+        "Log rotation / archival policy",
+        "External log export API"
+      ]
+    },
+    {
+      "id": "query-history",
+      "name": "Ability to Query History",
+      "coverage_percent": 40,
+      "grade": "C-",
+      "blocking_for_autonomous": false,
+      "present": [
+        "src/utils/assistant/sessionHistory.ts",
+        "src/hooks/useArrowKeyHistory.ts",
+        "src/hooks/useHistorySearch.ts",
+        "sortLogs() in types/logs.ts",
+        "getLogDisplayTitle() with fallback logic",
+        "switchSession() in bootstrap/state"
+      ],
+      "missing": [
+        "API endpoint for querying session history",
+        "CLI command for programmatic history query",
+        "Search/index over past session transcripts",
+        "Cross-session query capability",
+        "Time-range or content-based filtering API"
+      ]
+    },
+    {
+      "id": "attribute-causes",
+      "name": "Ability to Attribute Causes",
+      "coverage_percent": 45,
+      "grade": "C",
+      "blocking_for_autonomous": false,
+      "present": [
+        "src/utils/commitAttribution.ts, src/utils/attribution.ts",
+        "AttributionSnapshotMessage in transcript messages",
+        "countToolCalls() in messages.ts",
+        "src/tools/AgentTool/agentMemory.ts, agentMemorySnapshot.ts",
+        "src/services/diagnosticTracking.ts",
+        "src/hooks/toolPermission/permissionLogging.ts",
+        "src/utils/classifierApprovals.ts, classifierApprovalsHook.ts",
+        "src/utils/autoModeDenials.ts"
+      ],
+      "missing": [
+        "Cross-session causal chain store",
+        "Trace linking sessions to tool calls to file changes to outcomes",
+        "Provenance graph for modifications",
+        "Root cause analysis tooling"
+      ]
+    },
+    {
+      "id": "verify-changes",
+      "name": "Verification Mechanisms",
+      "coverage_percent": 15,
+      "grade": "F",
+      "blocking_for_autonomous": true,
+      "present": [
+        "rules/scripts/ (8 GP linters: GP-001 through GP-008)",
+        "rules/_registry.json (rule metadata with priority and status)",
+        "rules/scripts/check.py (orchestration script for linters)",
+        "Zod schema validation throughout codebase",
+        "src/utils/permissions/bashClassifier.ts, yoloClassifier.ts",
+        "src/commands/doctor/ (diagnostic health check)",
+        "src/commands/debug-tool-call/ (tool call inspection)",
+        "src/services/lsp/, src/tools/LSPTool/ (language server)",
+        "src/tools/testing/TestingPermissionTool.tsx"
+      ],
+      "missing": [
+        "tsconfig.json / type checking",
+        "Unit test runner (jest/vitest)",
+        "Test files (__tests__ directories)",
+        "Integration tests",
+        "E2E tests",
+        "CI pipeline (.github/workflows/)",
+        "Build verification",
+        "Mutation testing",
+        "Coverage reporting",
+        "Snapshot testing",
+        "Property-based testing"
+      ]
+    }
+  ],
+  "golden_principles": {
+    "count": 8,
+    "registry": "rules/_registry.json",
+    "scripts": [
+      "lint-gp001.sh - Tool call signature order",
+      "lint-gp002.sh - Circular dependency / barrel file check",
+      "lint-gp003.sh - Feature flag usage",
+      "lint-gp004.sh - AppState no direct mutation",
+      "lint-gp005.sh - MCP namespace convention",
+      "lint-gp006.sh - Tool error XML wrapping",
+      "lint-gp007.sh - Command type compliance",
+      "lint-gp008.sh - Typed error class usage"
+    ],
+    "orchestrator": "rules/scripts/check.py",
+    "method": "grep/heuristic (not semantic)",
+    "ci_enforced": false
+  },
+  "critical_missing_for_autonomous": [
+    {
+      "priority": 1,
+      "gap": "Build system and type checking",
+      "impact": "Cannot compile or verify any source modification",
+      "files_needed": ["tsconfig.json", "package.json (root)", "Makefile or build.ts"]
+    },
+    {
+      "priority": 2,
+      "gap": "Test infrastructure",
+      "impact": "Zero confidence in correctness of any change",
+      "files_needed": ["vitest.config.ts or jest.config.ts", "test utilities", "minimum smoke tests"]
+    },
+    {
+      "priority": 3,
+      "gap": "Structured telemetry / feedback API",
+      "impact": "Autonomous harness cannot observe agent behavior without terminal",
+      "files_needed": ["Event emitter at QueryEngine level", "structured stream interface"]
+    },
+    {
+      "priority": 4,
+      "gap": "Programmatic input/control SDK",
+      "impact": "Cannot drive the system without interactive terminal",
+      "files_needed": ["Headless SDK harness wrapping entrypoints/sdk/"]
+    },
+    {
+      "priority": 5,
+      "gap": "Cross-session causal attribution",
+      "impact": "Cannot trace causal chains across iteration loops",
+      "files_needed": ["Causal chain store", "session linking mechanism"]
+    }
+  ],
+  "underutilized_existing_scaffolding": [
+    "VCR system (src/services/vcr.ts) - designed for test fixtures, never exercised",
+    "Remote session manager (src/remote/) - WebSocket-based, Anthropic-internal only",
+    "SDK control schemas (src/entrypoints/sdk/) - defined but no public API surface",
+    "Golden Principle linters (rules/scripts/) - exist but no CI enforcement",
+    "Plugin system (13 plugins) - extensible but no test/verification plugin",
+    "Hookify plugin (plugins/hookify/) - Python rule engine, automation potential",
+    "Ralph Wiggum plugin (plugins/ralph-wiggum/) - custom scripts, automation potential"
+  ]
+}

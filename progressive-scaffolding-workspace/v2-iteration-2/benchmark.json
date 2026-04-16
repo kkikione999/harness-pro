@@ -1,0 +1,98 @@
+{
+  "skill_name": "progressive-scaffolding-v2",
+  "iteration": 2,
+  "timestamp": "2026-04-09T08:00:00Z",
+  "configurations": [
+    {
+      "run_id": "i2-eval1-v2_skill",
+      "eval_name": "assess-and-inject-open-claudecode",
+      "config": "v2_skill",
+      "pass_rate": 1.0,
+      "assertions_total": 5,
+      "assertions_passed": 5,
+      "duration_seconds": 183.1,
+      "total_tokens": 54656
+    },
+    {
+      "run_id": "i2-eval1-v1_baseline",
+      "eval_name": "assess-and-inject-open-claudecode",
+      "config": "v1_baseline",
+      "pass_rate": 0.2,
+      "assertions_total": 5,
+      "assertions_passed": 1,
+      "duration_seconds": 811.7,
+      "total_tokens": 98478
+    },
+    {
+      "run_id": "i2-eval2-v2_skill",
+      "eval_name": "behavioral-gap-analysis",
+      "config": "v2_skill",
+      "pass_rate": 1.0,
+      "assertions_total": 5,
+      "assertions_passed": 5,
+      "duration_seconds": 468.1,
+      "total_tokens": 55713
+    },
+    {
+      "run_id": "i2-eval2-v1_baseline",
+      "eval_name": "behavioral-gap-analysis",
+      "config": "v1_baseline",
+      "pass_rate": 0.8,
+      "assertions_total": 5,
+      "assertions_passed": 4,
+      "duration_seconds": 421.3,
+      "total_tokens": 52680
+    },
+    {
+      "run_id": "i2-eval3-v2_skill",
+      "eval_name": "self-debug-loop-clean",
+      "config": "v2_skill",
+      "pass_rate": 1.0,
+      "assertions_total": 6,
+      "assertions_passed": 6,
+      "duration_seconds": 198.0,
+      "total_tokens": 40066
+    },
+    {
+      "run_id": "i2-eval3-v1_baseline",
+      "eval_name": "self-debug-loop-clean",
+      "config": "v1_baseline",
+      "pass_rate": 0.833,
+      "assertions_total": 6,
+      "assertions_passed": 5,
+      "duration_seconds": 789.8,
+      "total_tokens": 65158
+    }
+  ],
+  "aggregate": {
+    "v2_skill": {
+      "pass_rate_mean": 1.0,
+      "pass_rate_stddev": 0.0,
+      "duration_mean": 283.1,
+      "duration_stddev": 124.7,
+      "tokens_mean": 50145,
+      "tokens_stddev": 6728
+    },
+    "v1_baseline": {
+      "pass_rate_mean": 0.611,
+      "pass_rate_stddev": 0.306,
+      "duration_mean": 674.3,
+      "duration_stddev": 171.5,
+      "tokens_mean": 72105,
+      "tokens_stddev": 18880
+    }
+  },
+  "delta": {
+    "v2_vs_v1_pass_rate": "+0.389 (38.9pp)",
+    "v2_vs_v1_duration": "-391s faster (58% reduction)",
+    "v2_vs_v1_tokens": "-21,960 fewer tokens (30% reduction)"
+  },
+  "key_findings": {
+    "eval1_v2_strengths": "Code injection with [HARNESS-INJECT-START] markers, specific file+line injection points, PROPOSE+APPROVE flow, Tier 1 recommendation",
+    "eval1_v1_gaps": "Generates only .harness/ wrapper scripts, no source injection, no approval flow, Tier 0 only",
+    "eval2_v2_strengths": "C1-C4/O1-O4 dimensions, explicit self-debug assessment, behavioral gap reasoning, specific injection points",
+    "eval2_v1_note": "Uses C1-C4 when prompted (prompt required it), but no behavioral gap analysis or injection points",
+    "eval3_v2_strengths": "Complete O→D→A→V loop, harnessLog structured output, setHarnessOverride runtime mutation, zero human touchpoints",
+    "eval3_v1_note": "Fixed bug via direct file edit, NOT via harness control plane (expected). 789s dominated by fixing 8 scaffolding template bugs."
+  }
+}

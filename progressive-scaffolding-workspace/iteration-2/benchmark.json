@@ -1,0 +1,92 @@
+{
+  "metadata": {
+    "skill_name": "progressive-scaffolding",
+    "skill_path": "/Users/josh_folder/.claude/skills/progressive-scaffolding",
+    "executor_model": "claude-sonnet-4-6",
+    "analyzer_model": "claude-sonnet-4-6",
+    "timestamp": "2026-04-09T01:45:00Z",
+    "evals_run": ["eval-1", "eval-2", "eval-3"],
+    "runs_per_configuration": 1
+  },
+  "runs": [
+    {
+      "run_id": "eval-1-with_skill",
+      "eval_id": 1,
+      "configuration": "with_skill",
+      "pass_rate": 1.0,
+      "total_tokens": 36987,
+      "duration_seconds": 86.8,
+      "grading_path": "iteration-2/eval-1/with_skill/grading.json"
+    },
+    {
+      "run_id": "eval-1-without_skill",
+      "eval_id": 1,
+      "configuration": "without_skill",
+      "pass_rate": 1.0,
+      "total_tokens": 55685,
+      "duration_seconds": 133.0,
+      "grading_path": "iteration-2/eval-1/without_skill/grading.json"
+    },
+    {
+      "run_id": "eval-2-with_skill",
+      "eval_id": 2,
+      "configuration": "with_skill",
+      "pass_rate": 1.0,
+      "total_tokens": 63631,
+      "duration_seconds": 296.5,
+      "grading_path": "iteration-2/eval-2/with_skill/grading.json"
+    },
+    {
+      "run_id": "eval-2-without_skill",
+      "eval_id": 2,
+      "configuration": "without_skill",
+      "pass_rate": 1.0,
+      "total_tokens": 48652,
+      "duration_seconds": 778.3,
+      "grading_path": "iteration-2/eval-2/without_skill/grading.json"
+    },
+    {
+      "run_id": "eval-3-with_skill",
+      "eval_id": 3,
+      "configuration": "with_skill",
+      "pass_rate": 1.0,
+      "total_tokens": 58425,
+      "duration_seconds": 216.3,
+      "grading_path": "iteration-2/eval-3/with_skill/grading.json"
+    },
+    {
+      "run_id": "eval-3-without_skill",
+      "eval_id": 3,
+      "configuration": "without_skill",
+      "pass_rate": 1.0,
+      "total_tokens": 35734,
+      "duration_seconds": 95.7,
+      "grading_path": "iteration-2/eval-3/without_skill/grading.json"
+    }
+  ],
+  "run_summary": {
+    "with_skill": {
+      "mean_pass_rate": "1.00",
+      "mean_time_seconds": "199.9",
+      "mean_tokens": "53014"
+    },
+    "without_skill": {
+      "mean_pass_rate": "1.00",
+      "mean_time_seconds": "335.7",
+      "mean_tokens": "46690"
+    },
+    "delta": {
+      "pass_rate": "+0.00",
+      "time_seconds": "-135.8 (skill is 40% faster)",
+      "tokens": "+6324"
+    }
+  },
+  "notes": [
+    "Iteration 2 - testing content repository detection fix",
+    "Eval 1: skill correctly identified harness-blogs as content repo and recommended progressive-docs",
+    "Eval 2: skill assessed its own directory instead of target project - eval target issue",
+    "Eval 3: skill generated functional observability scripts",
+    "Without-skill baseline generates custom scaffolding (different from skill output)",
+    "Content repo detection fix verified: Pre-Check Step 1.0 working correctly"
+  ]
+}

@@ -1,0 +1,90 @@
+# PATCH PROPOSAL #1: Tier 1 - Config Control
+# File: src/bootstrap/state.ts
+# Lines Added: 24
+# Capability: C1 (Config Control)
+# Status: PENDING APPROVAL
+
+================================================================================
+# INJECTION POINT
+# File: src/bootstrap/state.ts
+# Location: After line 25 (after imports, before first export)
+# Target: Global state management section
+================================================================================
+
+# PROPOSED CODE TO ADD (insert at line 26):
+
+// [HARNESS-INJECT-START: config_control]
+/**
+ * Harness Config Override System
+ * Allows agents to override runtime configuration without restart.
+ * Activated by HARNESS_CONTROL=1 environment variable.
+ */
+
+// Internal override storage - keyed by config path
+let _harnessOverrides: Record<string, unknown> = {}
+
+/**
+ * Set a harness override value for a configuration key.
+ * @param key Configuration key (e.g., 'api_timeout_ms', 'debug_mode')
+ * @param value Override value (any JSON-serializable type)
+ *
+ * Usage: setHarnessOverride('api_timeout_ms', 5000)
+ * Then: getHarnessConfig('api_timeout_ms', 3000) returns 5000
+ */
+export function setHarnessOverride(key: string, value: unknown): void {
+  _harnessOverrides[key] = value
+}
+
+/**
+ * Get a configuration value with harness override support.
+ * @param key Configuration key
+ * @param fallback Default value if no override is set
+ * @returns The overridden value if HARNESS_CONTROL=1, otherwise the fallback
+ *
+ * Usage: getHarnessConfig('api_timeout_ms', 3000)
+ * Returns: Override value (if set) or fallback
+ */
+export function getHarnessConfig<T = unknown>(key: string, fallback: T): T {
+  if (process.env.HARNESS_CONTROL === '1') {
+    return (_harnessOverrides[key] ?? fallback) as T
+  }
+  return fallback
+}
+
+/**
+ * Clear all harness overrides.
+ * Useful for resetting to production defaults.
+ */
+export function clearHarnessOverrides(): void {
+  _harnessOverrides = {}
+}
+
+/**
+ * Get all current harness overrides (for debugging).
+ * @returns Record of all override key-value pairs
+ */
+export function getAllHarnessOverrides(): Record<string, unknown> {
+  return { ..._harnessOverrides }
+}
+// [HARNESS-INJECT-END: config_control]
+
+================================================================================
+# RATIONALE
+
+Why this injection point?
+- bootstrap/state.ts is the central state management file
+- Already uses pattern of global state with signals
+- Functions can be called from anywhere in the codebase
+- Zero intrusion into existing functionality when HARNESS_CONTROL != '1'
+
+Agent Usage Example:
+```typescript
+// Agent can call these functions to modify runtime config
+import { setHarnessOverride, getHarnessConfig } from './bootstrap/state.js'
+
+// Override a timeout value
+setHarnessOverride('api_timeout_ms', 5000)
+
+// Next getHarnessConfig call returns 5000 instead of fallback
+const timeout = getHarnessConfig('api_timeout_ms', 3000) // returns 5000
+```

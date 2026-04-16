@@ -1,0 +1,31 @@
+{
+  "run_id": "eval-2-with_skill",
+  "timestamp": "2026-04-09",
+  "expectations": [
+    {
+      "text": "identifies-project-type: Report identifies the project as a TypeScript/Node.js CLI project",
+      "passed": true,
+      "evidence": "Report states 'This is a software project (TypeScript CLI)' in Step 1.0 (line 12). Step 1.1 explicitly classifies Primary Type as 'cli' and notes 'Has bin in package.json (CLI tool)'. The project is identified as having ~1,888 TypeScript/TSX source files."
+    },
+    {
+      "text": "notes-no-ci: Report notes absence of CI/CD pipeline",
+      "passed": true,
+      "evidence": "Gap 3 (HIGH) titled 'No Automated Verification Pipeline' explicitly states: 'No CI/CD (no .github/workflows). No pre-commit hooks. No automated triggering on changes.' Also notes absence of Jenkinsfile and Makefile for CI purposes."
+    },
+    {
+      "text": "notes-no-tests: Report notes absence of test infrastructure",
+      "passed": true,
+      "evidence": "Gap 4 (MEDIUM) titled 'No Build/Test Infrastructure' states: 'No test framework (no jest, vitest, mocha config)', 'No test files (*.test.ts, *.spec.ts)', 'No build step'. Also notes absence of tsconfig.json and package.json scripts for build/test."
+    },
+    {
+      "text": "recognizes-existing-observability: Report recognizes existing telemetry/analytics/logging infrastructure in the source code",
+      "passed": true,
+      "evidence": "Observability section explicitly identifies: 'src/utils/telemetry/ (9 files)', 'src/services/analytics/ (9 files)', 'src/utils/profilerBase.ts', 'src/utils/telemetryAttributes.ts', 'src/utils/telemetry/instrumentation.ts'. Also references OpenTelemetry patterns, correlation/trace IDs, distributed tracing, and LogQL/BigQuery query patterns. Scores O1-O4 all at Level 3."
+    },
+    {
+      "text": "provides-concrete-recommendations: Report provides concrete, actionable improvement recommendations",
+      "passed": true,
+      "evidence": "'What Would Be Needed to Reach Usable' section lists 6 concrete numbered recommendations with specific file paths: (1) Root Makefile with lint/verify/test-auto/status/clean targets, (2) .harness/controllability/ scripts, (3) .harness/observability/ scripts, (4) .harness/observability/logs/ directory, (5) .harness/ci/ci-pipeline.yml, (6) Pre-commit hook to auto-run check.py."
+    }
+  ]
+}

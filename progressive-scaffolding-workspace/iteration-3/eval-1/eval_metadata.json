@@ -1,0 +1,48 @@
+{
+  "eval_id": 1,
+  "eval_name": "full-scaffolding-real-project",
+  "prompt": "Add scaffolding to /Users/josh_folder/Open-ClaudeCode",
+  "assertions": [
+    {
+      "name": "identifies-as-software-project",
+      "type": "file_contains",
+      "target": "assessment-report.md",
+      "check": "Report classifies the project as a software/code project, not a content repository",
+      "expected": true
+    },
+    {
+      "name": "covers-all-dimensions",
+      "type": "file_contains",
+      "target": "assessment-report.md",
+      "check": "Report covers all 11 dimensions: E1, E2, E3, E4, O1, O2, O3, O4, V1, V2, V3",
+      "expected": true
+    },
+    {
+      "name": "detects-no-tests",
+      "type": "file_contains",
+      "target": "assessment-report.md",
+      "check": "Report identifies the absence of test infrastructure (no test runner, no test files)",
+      "expected": true
+    },
+    {
+      "name": "detects-existing-telemetry",
+      "type": "file_contains",
+      "target": "assessment-report.md",
+      "check": "Report recognizes existing telemetry/analytics utilities in the project",
+      "expected": true
+    },
+    {
+      "name": "generates-harness-directory",
+      "type": "file_exists",
+      "check": "A .harness or scaffolding directory with generated scripts exists",
+      "expected": true
+    },
+    {
+      "name": "scripts-relevant-to-typescript",
+      "type": "file_contains",
+      "target": "any generated script",
+      "check": "Generated scripts reference npm, node, npx, tsx, bun, or TypeScript-specific tooling",
+      "expected": true
+    }
+  ]
+}

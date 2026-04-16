@@ -1,0 +1,512 @@
+================================================================================
+PROGRESSIVE SCAFFOLDING v2 — BEHAVIORAL ASSESSMENT REPORT
+Project: Open-ClaudeCode
+Assessor: progressive-scaffolding skill (v2, model: sonnet)
+Date: 2026-04-09
+================================================================================
+
+## ASSESSMENT SUMMARY
+
+Project: Open-ClaudeCode
+Type: Terminal-based CLI (TypeScript/React/Ink), ~432k lines, 1,900+ files
+Source: Recovered from npm source maps; pre-compiled bundle at package/cli.js
+Build/Test Infrastructure: NONE (explicitly read-only research project)
+
+Tier Recommendation: Tier 0 — Surface (wrapper scripts only)
+
+Behavioral Gap Matrix:
+  C1 Config Control:       0/1  — No runtime config mutation capability
+  C2 Feature Control:      0/1  — Feature flags are read-only (feature() is internal)
+  C3 State Injection:     0/1  — No state injection hooks exported
+  C4 Middleware:          0/1  — No middleware pipeline for interception
+  O1 Semantic Logs:       0/1  — Raw Ink terminal output, no JSON schema
+  O2 Correlation:          0/1  — No correlation ID propagation
+  O3 Internal Query:       0/1  — AppState store not exported for external query
+  O4 Event Visibility:     0/1  — No structured event emission system
+  V1 Intrusion Delta:     0/1  — No harness injections in source (only wrapper files)
+  V2 Behavioral Lift:     0/8  — All C/O dimensions at 0
+  V3 Loop Completeness:   0/1  — O→D→A→V loop cannot complete
+
+Vector Score: (C1=0, C2=0, C3=0, C4=0, O1=0, O2=0, O3=0, O4=0, V1=0, V2=0, V3=0)
+Perfect Score: (1,1,1,1, 1,1,1,1, 1,1,1)
+
+================================================================================
+## DIMENSION-BY-DIMENSION ANALYSIS
+================================================================================
+
+### CONTROLLABILITY (C1–C4)
+
+--- C1: Config Control — 0/1 ---
+
+What exists:
+  The app has a 5-level settings hierarchy (user global → project local → CLI
+  flag → MDM/policy). Settings are loaded at startup via getInitialSettings()
+  and watched for file changes via chokidar. Tools access settings via:
+    Pattern A: useSettings() hook (reactive, React)
+    Pattern B: getInitialSettings() (snapshot, non-reactive)
+    Pattern C: context.getAppState().settings (live within tool call)
+
+What's missing:
+  There is NO exported function that lets an external agent call
+  setHarnessOverride(key, value) to mutate runtime config without restart.
+  Settings come from files on disk. The only way to change config is:
+    (a) Edit the settings JSON files on disk (chokidar watcher picks it up)
+    (b) Pass CLI flags at startup
+  Neither is a programmatic in-process function call. The AppState store is
+  accessible internally via context.getAppState() but is NOT exported as a
+  module that an agent can require and call.
+
+Behavioral test (would fail):
+  > HARNESS_CONTROL=1 node -e "require('./src/state').setHarnessOverride(...)"
+  Result: MODULE_NOT_FOUND — no such export
+
+Self-debug scenario — Can agent fix a runtime config error autonomously?
+  NO. If a tool reads settings.timeout = 3000 and needs it to be 5000,
+  the agent must: (1) know which settings file to edit, (2) edit it on disk,
+  (3) wait for chokidar to detect the change, (4) hope the watcher correctly
+  propagates to the right tool's context. This is file-level mutation, not
+  runtime mutation. The agent cannot call a function to change behavior
+  mid-session and verify it immediately.
+
+--- C2: Feature Control — 0/1 ---
+
+What exists:
+  The app uses feature('FLAG_NAME') from bun:bundle for conditional code paths.
+  Feature flags are compiled into the bundle and checked at runtime. Examples:
+    feature('BASH_CLASSIFIER'), feature('TRANSCRIPT_CLASSIFIER'),
+    feature('COORDINATOR_MODE'), feature('KAIROS')
+
+What's missing:
+  There is NO exported function setFeatureFlag(name, value). Feature flags are
+  determined at bundle compile time by bun:bundle. The agent cannot toggle a
+  feature flag programmatically.
+
+Behavioral test (would fail):
+  > HARNESS_CONTROL=1 node -e "require('./src/featureFlags').setFeatureFlag(...)"
+  Result: MODULE_NOT_FOUND — no such file/module
+
+Self-debug scenario — Can agent toggle a feature flag to test a code path?
+  NO. Feature flags cannot be changed at runtime. The agent would need to
+  rebuild the bundle with different bun:bundle values, which is impossible
+  without the original build infrastructure.
+
+--- C3: State Injection — 0/1 ---
+
+What exists:
+  The app has a Zustand-like AppState store (src/state/store.ts) with
+  getState()/setState() methods. State is immutable via updater functions.
+  Tools can access state via ToolUseContext.getAppState().
+
+What's missing:
+  There is NO exported injectState(path, value) or queryState(path) function.
+  The AppState store is internal to the app and not exported as a module.
+  There are no test state hooks, no mock data injection points.
+
+Behavioral test (would fail):
+  > HARNESS_CONTROL=1 node -e "require('./src/state').injectState(...)"
+  Result: MODULE_NOT_FOUND
+
+Self-debug scenario — Can agent inject mock data to simulate failure conditions?
+  NO. The agent has no way to inject test state. If debugging a tool that
+  queries an external API, the agent cannot mock the response — it must
+  either set up a real mock server or modify the tool's source code directly.
+
+--- C4: Middleware Injection — 0/1 ---
+
+What exists:
+  The app has a hook system (src/utils/hooks.ts) for pre-tool-execution hooks.
+  The structuredIO.ts manages SDK permission flow and MCP messaging.
+
+What's missing:
+  There is no middleware pipeline for intercepting and modifying tool requests
+  or responses at runtime. The hook system is for permission/request hooks,
+  not general-purpose middleware injection.
+
+Self-debug scenario — Can agent add middleware to trace a specific request?
+  NO. No middleware injection capability.
+
+================================================================================
+
+### OBSERVABILITY (O1–O4)
+
+--- O1: Semantic Logs — 0/1 ---
+
+What exists:
+  The app uses Ink (React-to-terminal) rendering. All "logs" are terminal UI
+  output via <Message> components and console.* calls rendered to the terminal.
+  Internal utilities exist:
+    src/utils/debug.ts — logForDebugging() writes to file (env-controlled)
+    src/utils/diagLogs.ts — logForDiagnosticsNoPII() writes JSON to a file
+      (requires CLAUDE_CODE_DIAGNOSTICS_FILE env var)
+  These are internal diagnostic utilities, NOT structured stdout logs.
+
+What's missing:
+  No structured JSON logs emitted to stdout with schema:
+    {level, timestamp, message, metadata}
+  The app's primary output channel is terminal UI text. There is no way for
+  an external agent to parse structured log entries from the app's output.
+
+Behavioral test (would fail):
+  > node cli.js --version 2>&1 | jq .
+  Result: Raw text, not JSON. No parseable log entries.
+
+Self-debug scenario — Can agent parse logs to identify a failure?
+  NO — not in structured form. The agent sees terminal text and must infer
+  structure from raw strings. Error messages are human-readable text rendered
+  via Ink components, not machine-parseable JSON.
+
+--- O2: Correlation Propagation — 0/1 ---
+
+What exists:
+  The trace.sh harness script generates a CORRELATION_ID and exports it, but
+  this is purely a wrapper-script-level variable. The app itself does NOT
+  read process.env.CORRELATION_ID or propagate any correlation ID through
+  its log entries.
+
+What's missing:
+  No structured logs carry a correlationId field. No component reads
+  HARNESS_CORRELATION_ID from the environment. There is no correlation
+  propagation through nested function calls.
+
+Self-debug scenario — Can agent trace a request across multiple components?
+  NO. Without correlation IDs in log entries, the agent cannot trace a
+  single operation through the QueryEngine → tool dispatch → result pipeline.
+
+--- O3: Internal State Query — 0/1 ---
+
+What exists:
+  AppState is accessible internally via useAppState() hooks and
+  context.getAppState() within tool execution. State includes:
+    settings, UI state, permission context, MCP connections, task/team state,
+    notifications queue.
+
+What's missing:
+  No exported queryState() function. The agent cannot call a function to
+  ask "what is the current permission context?" or "what MCP servers are
+  connected?" from outside the app's process.
+
+Self-debug scenario — Can agent query internal state to understand why
+  a tool was denied?
+  NO. The agent must infer state from the terminal output (e.g., "Permission
+  denied" message) rather than query it directly.
+
+--- O4: Event Visibility — 0/1 ---
+
+What exists:
+  Internal event system via notifyCommandLifecycle(uuid, 'completed') called
+  from structuredIO.ts. Also notifySessionStateChanged('running') transitions.
+  These are internal function calls — no structured event emission.
+
+What's missing:
+  No event log entries in the output. No {type: "event", name: "...", payload: {...}}
+  format. Events are fire-and-forget internal calls.
+
+Self-debug scenario — Can agent observe internal events?
+  NO. Events are not surfaced to the agent's observation layer.
+
+================================================================================
+
+### VALUE DIMENSIONS (V1–V3)
+
+--- V1: Intrusion Delta — 0/1 ---
+
+  Existing harness files: 8 files in .harness/ (wrapper scripts only)
+  Source injections: 0 (no [HARNESS-INJECT-START] markers in src/)
+  Total source changes: 0 lines (no source files modified)
+
+  PASS criterion: < 200 lines changed, 0 new source files
+  Current: 0 lines changed, but 0 behavioral capability added.
+  Score 0 because no injections = no behavioral lift.
+
+--- V2: Behavioral Lift — 0/8 ---
+
+  Count of dimensions that moved 0 → 1: 0
+  PASS criterion: at least 4 dimensions improved
+  Score: 0/8 dimensions improved
+
+--- V3: Loop Completeness — 0/1 ---
+
+  Self-debug task simulation:
+    OBSERVE: Agent sees terminal text — cannot parse structured logs (O1=0)
+    DECIDE:  Agent has no setHarnessOverride() to plan around (C1=0)
+    ACT:     Agent cannot mutate runtime state (C1=0, C2=0, C3=0)
+    VERIFY:  Agent cannot re-parse structured logs to confirm change (O1=0)
+
+  Human touchpoints required: UNLIMITED
+    Agent must ask the user to explain terminal output it cannot parse.
+    Agent must ask the user to manually edit settings files.
+    Agent must ask the user to confirm whether changes worked.
+  Score: 0/1 — O→D→A→V loop cannot complete without human intervention.
+
+================================================================================
+## BEHAVIORAL GAPS: SELF-DEBUG CAPABILITY
+================================================================================
+
+Central question: Can an agent self-debug a runtime error without human help?
+
+ANSWER: NO — for the following structural reasons:
+
+### GAP 1: No Structured Observable Output
+
+The app emits human-readable terminal UI text via Ink. An agent running in
+non-interactive mode (e.g., SDK, print mode) sees text output but cannot
+parse structured log entries. When a runtime error occurs, the agent sees:
+
+  "<error>Tool permission denied: Bash tool requires approval</error>"
+
+Instead of a structured JSON log entry like:
+
+  {"level":"ERROR","timestamp":"...","component":"permission",
+   "message":"Tool permission denied","metadata":{"tool":"Bash","reason":"..."}}
+
+The agent cannot OBSERVE the failure in a machine-readable way. It must
+parse text, which is fragile and unreliable for autonomous operation.
+
+### GAP 2: No Runtime Config Mutation
+
+If the agent diagnoses that the error is caused by a misconfigured setting,
+it has no way to fix it programmatically. It would need to:
+  (a) Know the exact file path and format of the settings file
+  (b) Edit the file on disk
+  (c) Hope the chokidar watcher picks up the change correctly
+There is no setHarnessOverride('toolPermissionContext.mode', 'allow') function
+it can call to change behavior immediately and verify the result.
+
+### GAP 3: No State Query
+
+The agent cannot ask "what is the current AppState?" to understand the full
+runtime context of an error. It can only infer from the visible terminal
+output, which is incomplete and unstructured.
+
+### GAP 4: No Build/Test Infrastructure
+
+Even if harness injection patches were created, there is no way to:
+  (a) Compile TypeScript source with injected patches
+  (b) Run automated behavioral tests to verify the patches work
+  (c) Re-bundle the CLI with the changes
+
+The project explicitly states it is READ-ONLY research. There is no
+tsconfig.json, no build script, and no test runner. The .harness/test-auto.sh
+script falls through to "no test framework detected" and exits with code 1.
+
+### GAP 5: REPL Interaction Model
+
+The CLI's primary interface is an interactive REPL. Even if the app could
+emit structured logs, an agent would need a non-interactive execution mode
+to run the O→D→A→V loop programmatically. The print mode (src/cli/print.ts)
+provides non-interactive output, but it still uses Ink rendering for the
+terminal UI, not structured JSON for machines.
+
+### GAP 6: Settings Are File-Based, Not Memory-Based
+
+Unlike a typical web service that reads config at startup and can be mutated
+via an API endpoint, Claude Code's settings are read from JSON files. The
+AppState store is updated when the chokidar watcher detects file changes,
+but this requires disk I/O and is not an atomic in-process function call.
+An agent cannot "set config and verify immediately" — it must wait for the
+filesystem watcher to propagate changes.
+
+================================================================================
+## WHAT EXISTS (ASSET MAP)
+================================================================================
+
+The project is NOT a blank slate. It has significant scaffolding at the
+wrapper/surface layer:
+
+CONTROLLABILITY SURFACE (wrapper layer):
+  .harness/controllability/start.sh       — generates CORRELATION_ID, finds CLI
+  .harness/controllability/stop.sh        — kills process by PID
+  .harness/controllability/verify.sh      — checks PID alive + HTTP health
+  .harness/controllability/test-auto.sh   — tries npm/go/make test frameworks
+  .harness/controllability/Makefile       — delegates to harness scripts
+  Root Makefile                           — delegates to .harness/
+
+OBSERVABILITY SURFACE (wrapper layer):
+  .harness/observability/log.sh           — queries log files in logs/
+  .harness/observability/trace.sh          — wraps commands with CORRELATION_ID
+  .harness/observability/health.sh        — JSON health status
+  .harness/observability/logs/            — directory for log output
+
+CI SURFACE:
+  .harness/ci/ci-pipeline.yml             — GitHub Actions CI template
+
+RULES FRAMEWORK:
+  rules/_registry.json                    — 8 GP rules registered
+  rules/scripts/lint-gp001.sh             — Tool signature linter
+  rules/scripts/lint-gp002.sh             — Types layer / circular deps
+  rules/scripts/lint-gp003.sh             — Feature flags
+  rules/scripts/lint-gp004.sh             — AppState no mutation
+  rules/scripts/lint-gp005.sh             — MCP namespace
+  rules/scripts/lint-gp006.sh             — tool_use_error XML
+  rules/scripts/lint-gp007.sh             — Command types
+  rules/scripts/lint-gp008.sh             — Typed errors
+  rules/scripts/check.py                   — Unified check runner
+
+INTERNAL INFRASTRUCTURE (existing, not harness-generated):
+  src/utils/debug.ts                       — File-based debug logging (env-gated)
+  src/utils/diagLogs.ts                   — PII-safe diagnostics to file
+  src/state/store.ts                       — Zustand-like store (internal)
+  src/cli/structuredIO.ts                — SDK protocol handler
+  src/utils/errors.ts                     — Typed error class hierarchy
+  docs/reference/error-handling.md         — Error system documentation
+  docs/reference/settings-state.md         — Settings/state architecture
+
+PERMISSIONS CONFIGURATION:
+  .claude/settings.local.json             — Claude Code local permissions
+  examples/settings/settings-strict.json — Strict permission example
+
+AGENT GUIDANCE:
+  AGENTS.md                               — Comprehensive agent guide (76 lines)
+  docs/guides/*.md                        — Tool/command/component creation guides
+
+TEST RESULTS:
+  .harness/test-result.json               — 4-pass structural check (CLI binary,
+                                            node runtime, version, source files)
+
+================================================================================
+## ROOT CAUSE ANALYSIS
+================================================================================
+
+The fundamental problem is a CATEGORY MISMATCH:
+
+  The .harness/ scaffolding is designed for a SERVICE (web server, daemon).
+  Open-ClaudeCode is a TERMINAL CLI (interactive REPL, pre-compiled bundle).
+
+v2 scaffolding expects:
+  - App runs as a service (long-running process)
+  - App emits structured JSON logs to stdout
+  - Agent can call functions to mutate runtime state
+  - Agent can parse structured logs and verify behavioral changes
+
+Open-ClaudeCode reality:
+  - App is an interactive REPL (short-lived per-session)
+  - App emits terminal UI text via Ink (not machine-parseable)
+  - Source cannot be rebuilt (no build infrastructure)
+  - Pre-compiled bundle (package/cli.js) is immutable without rebuild
+
+The .harness/ wrappers are INERT: they call the CLI binary and pipe its
+output, but they cannot inject behavioral changes into the app because:
+  1. The CLI is a pre-compiled bundle, not source
+  2. Even if it were source, there's no TypeScript compiler available
+  3. The CLI runs in REPL mode, not as a service with an HTTP API
+
+Additionally, the existing assessment file incorrectly references
+"src/main.tsx console.warn/error calls" — in fact, src/main.tsx is
+~800k lines because it contains the entire bundled application from
+source maps, not a hand-written entry point. The actual entry is
+package/cli.js which is the compiled artifact.
+
+================================================================================
+## RECOMMENDED TIER AND PATH
+================================================================================
+
+Recommended Tier: Tier 0 — Surface (wrapper scripts only)
+
+This is the correct tier because:
+  - The app CANNOT be modified at the source level (no build infrastructure)
+  - The app runs in REPL mode, not as a service with an HTTP API
+  - Behavioral injection into the compiled bundle is not feasible
+  - Only wrapper-level operations are possible
+
+If Tier 1+ is desired, prerequisite work is required:
+
+  A. Establish a build system (tsconfig, tsc compilation, bundling)
+     — Without this, no source file can be compiled and tested
+     — Even harness injection markers cannot be validated
+
+  B. Enable a non-interactive execution mode that emits structured JSON
+     — Current print mode still uses Ink terminal rendering
+     — Agent needs machine-readable output, not terminal text
+
+  C. Create a headless/non-REPL variant callable programmatically
+     — The REPL is the primary interface; there's no headless mode
+     — Agent cannot run O→D→A→V loop in interactive REPL
+
+  D. Create a CI pipeline that runs behavioral tests against the compiled CLI
+     — .harness/test-auto.sh currently exits 1 (no test framework)
+     — Behavioral verification (Phase 6 of v2 REFINE LOOP) cannot run
+
+Only after prerequisites A–D can the behavioral injection tiers be applied.
+
+Concrete Tier 1 injection targets (once prerequisites met):
+  1. src/utils/harnessConfig.ts — setHarnessOverride/getHarnessConfig
+     Instrument key settings reads (getInitialSettings, useSettings)
+  2. src/utils/harnessLog.ts — harnessLog() with JSON to stdout
+     Replace key log calls with structured output when HARNESS_CONTROL=1
+  3. src/state/harnessState.ts — injectState/queryState
+     Integrate with AppStateStore for read operations
+
+================================================================================
+## BEHAVIORAL CONTRACT STATUS
+================================================================================
+
+C1: setHarnessOverride(key, v) → getHarnessConfig(key) returns v
+    Status: NO CONTRACT — functions do not exist
+
+C2: setFeatureFlag(key, v) → isFeatureEnabled(key) returns v
+    Status: NO CONTRACT — feature flags are compiled-in, not runtime
+
+C3: injectState(path, v) → queryState(path) returns v
+    Status: NO CONTRACT — no state injection system
+
+O1: Every harnessLog() outputs valid JSON: {level, timestamp, message, metadata}
+    Status: NO CONTRACT — no harnessLog() exists, no structured stdout
+
+O2: correlationId propagates through all nested log calls
+    Status: NO CONTRACT — no correlation ID system in app
+
+V1: Total intrusion < 200 lines, zero new source files
+    Status: PARTIAL — 0 lines, but 0 capability added
+
+V2: At least 4 C/O dimensions improved
+    Status: FAIL — 0/8 dimensions improved
+
+V3: 0 human touchpoints in self-debug session
+    Status: FAIL — unlimited human touchpoints required
+
+================================================================================
+## APPENDIX: FILES EXAMINED
+================================================================================
+
+Harness layer:
+  .harness/controllability/Makefile
+  .harness/controllability/start.sh
+  .harness/controllability/stop.sh
+  .harness/controllability/verify.sh
+  .harness/controllability/test-auto.sh
+  .harness/observability/log.sh
+  .harness/observability/trace.sh
+  .harness/observability/health.sh
+  .harness/ci/ci-pipeline.yml
+  .harness/test-result.json
+
+Rules layer:
+  rules/_registry.json
+  rules/scripts/check.py
+  rules/scripts/lint-gp001.sh
+
+Source internals:
+  src/utils/debug.ts
+  src/utils/diagLogs.ts
+  src/state/store.ts
+  src/cli/structuredIO.ts (45181 tokens — examined via preview)
+  src/cli/print.ts
+
+Documentation:
+  docs/reference/architecture.md
+  docs/reference/settings-state.md
+  docs/reference/error-handling.md
+  docs/reference/directory-map.md
+  AGENTS.md
+
+Configuration:
+  .claude/settings.local.json
+  examples/settings/settings-strict.json
+  package/package.json
+  Makefile (root)
+
+Skill references:
+  progressive-scaffolding/SKILL.md
+  progressive-scaffolding/references/v2/evaluation-framework.md
+
+================================================================================

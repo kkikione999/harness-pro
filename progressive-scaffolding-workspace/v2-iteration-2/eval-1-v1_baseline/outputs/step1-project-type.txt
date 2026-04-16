@@ -1,0 +1,15 @@
+/Users/josh_folder/harness-pro-for-vibe/harness-blogs/progressive-scaffolding-workspace/v2-redesign/skill-v1-backup/scripts/detect-project-type.sh: line 11: declare: -A: invalid option
+declare: usage: declare [-afFirtx] [-p] [name[=value] ...]
+DEBUG: 0 = 1
+
+=== Project Type Detection ===
+Type: 0
+Confidence: 1
+
+All scores:
+  backend: 1
+  mobile: 1
+  cli: 1
+  embedded: 1
+  desktop: 1
+0

@@ -1,0 +1,14 @@
+=== Controllability Assessment ===
+
+E1_EXECUTE: Level 2
+E2_INTERVENE: Level 2
+E3_INPUT: Level 2
+E4_ORCHESTRATE: Level 2
+
+Evidence:
+- E1: Build system found
+- E2: Can modify state
+- E3: Has config injection
+- E4: Has orchestration
+
+Controllability Score: 8/12

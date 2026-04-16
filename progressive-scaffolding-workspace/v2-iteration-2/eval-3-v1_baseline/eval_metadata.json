@@ -1,0 +1,31 @@
+{
+  "eval_id": 3,
+  "eval_name": "self-debug-loop-clean-baseline",
+  "prompt": "I have a broken Node.js API server at /tmp/test-api-v1-baseline. The /api/users endpoint returns 500. Using the progressive-scaffolding skill, add scaffolding and try to fix the bug. Work autonomously. Start the server with `node /tmp/test-api-v1-baseline/src/main.js` and test the /api/users endpoint with curl. IMPORTANT: This API has NO harness code pre-injected. You must generate the scaffolding from scratch.",
+  "assertions": [
+    {
+      "name": "observe-phase",
+      "check": "Agent reads server output to identify the error (DB connection failure)"
+    },
+    {
+      "name": "decide-phase",
+      "check": "Agent selects a fix strategy"
+    },
+    {
+      "name": "act-phase",
+      "check": "Agent applies the fix"
+    },
+    {
+      "name": "verify-phase",
+      "check": "Agent confirms /api/users returns 200 with users array"
+    },
+    {
+      "name": "no-human-touchpoints",
+      "check": "Agent completes entire loop without asking user questions"
+    },
+    {
+      "name": "fixes-via-harness",
+      "check": "Agent uses the harness control plane (runtime override, structured logs, state injection) to fix and verify, NOT just environment variables or ad-hoc curl commands"
+    }
+  ]
+}

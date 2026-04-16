@@ -1,0 +1,82 @@
+# Open-ClaudeCode - CI Pipeline
+# Copy to .github/workflows/ci.yml to enable automated verification.
+# Runs Golden Principle linters and project structure checks on every push/PR.
+
+name: CI - Golden Principles
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint:
+    name: Golden Principle Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Verify project structure
+        run: |
+          echo "=== Structure Check ==="
+          test -d src && echo "[OK] src/" || (echo "[FAIL] src/ missing" && exit 1)
+          test -d src/tools && echo "[OK] src/tools/" || (echo "[FAIL] src/tools/ missing" && exit 1)
+          test -d src/commands && echo "[OK] src/commands/" || (echo "[FAIL] src/commands/ missing" && exit 1)
+          test -f package/package.json && echo "[OK] package.json" || (echo "[FAIL] package.json missing" && exit 1)
+          test -f rules/scripts/check.py && echo "[OK] check.py" || (echo "[FAIL] check.py missing" && exit 1)
+          test -f rules/_registry.json && echo "[OK] _registry.json" || (echo "[FAIL] _registry.json missing" && exit 1)
+
+      - name: Run all Golden Principle linters
+        run: |
+          echo "=== Running GP Lint ==="
+          python3 rules/scripts/check.py --verbose
+
+      - name: Run import direction check
+        run: |
+          echo "=== Import Direction Check ==="
+          if [ -f .harness/controllability/lint-import-direction.sh ]; then
+            bash .harness/controllability/lint-import-direction.sh
+          else
+            echo "Import direction linter not available, skipping."
+          fi
+
+      - name: Generate metrics
+        if: always()
+        run: |
+          echo "=== Project Metrics ==="
+          echo "Source files: $(find src -name '*.ts' -o -name '*.tsx' 2>/dev/null | wc -l)"
+          echo "Lint scripts: $(ls rules/scripts/lint-*.sh 2>/dev/null | wc -l)"
+          echo "GP rules: $(python3 -c "import json; print(len(json.load(open('rules/_registry.json')).get('rules',{})))" 2>/dev/null || echo 0)"
+
+  test-auto:
+    name: Automated Test Run
+    runs-on: ubuntu-latest
+    needs: lint
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Run automated test with log capture
+        run: |
+          mkdir -p .harness/observability/logs
+          bash .harness/controllability/test-auto.sh
+        env:
+          CORRELATION_ID: "ci-${{ github.run_id }}-${{ github.run_number }}"
+
+      - name: Upload test logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-logs
+          path: .harness/observability/logs/
+          retention-days: 30

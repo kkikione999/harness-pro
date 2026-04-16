@@ -1,0 +1,31 @@
+{
+  "run_id": "eval-2-with_skill",
+  "timestamp": "2026-04-09T00:00:00Z",
+  "expectations": [
+    {
+      "text": "identifies-project-type",
+      "passed": true,
+      "evidence": "Report explicitly identifies the project as 'CLI (terminal application)' and details its TypeScript/Node.js nature: 1,888 TypeScript files in src/, bin field in package.json, React/Ink terminal UI. Step 1.1 is dedicated to project type detection with a scored matrix confirming CLI as the dominant type."
+    },
+    {
+      "text": "notes-no-ci",
+      "passed": true,
+      "evidence": "Multiple explicit references: E4 assessment states 'No CI, no .github/workflows/, no Makefile'; V3 assessment states 'No automated verification pipeline exists'; Gap 5 is titled 'No CI/CD (V3) -- SEVERITY: HIGH' and recommends creating '.github/workflows/ci.yml' and pre-commit hooks."
+    },
+    {
+      "text": "notes-no-tests",
+      "passed": true,
+      "evidence": "Pre-check table shows 'Test infrastructure | NO | Zero test files found'; V1 assessment states 'No test framework, no test command'; Gap 3 is titled 'No Test Infrastructure (V1, V3) -- SEVERITY: CRITICAL' noting 'Zero test files. No test framework is configured.' Recommends specific test framework setup (vitest or jest)."
+    },
+    {
+      "text": "recognizes-existing-observability",
+      "passed": true,
+      "evidence": "O4 assessment notes 'Correlation IDs found in 10+ source files' (requestId, correlationId, traceId patterns in AgentTool, SendMessageTool, ExitPlanModeV2Tool). O1 notes '38 source files with console.log/error/warn'. O2 notes 'logging infrastructure detected in source files' with structured logging keywords. The 'What Already Works' section also acknowledges existing correlation IDs and logging."
+    },
+    {
+      "text": "provides-concrete-recommendations",
+      "passed": true,
+      "evidence": "Highly specific recommendations organized by priority. Priority 1: Root Makefile with specific targets (build, lint, test, verify, check-all, clean), tsconfig.json + root package.json, vitest.config.ts + smoke tests, .harness/controllability/Makefile. Priority 2: verify.sh, test-auto.sh, log.sh, health.sh scripts. Priority 3: ci.yml, pre-commit hooks, metrics.sh. Each gap section includes a 'What is needed' block with concrete file paths and tool names."
+    }
+  ]
+}

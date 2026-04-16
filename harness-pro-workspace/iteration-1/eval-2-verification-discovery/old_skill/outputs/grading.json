@@ -1,0 +1,11 @@
+{
+  "eval_id": 2,
+  "eval_name": "verification-discovery-baseline",
+  "prompt": "Old skill complete-work Step 1 verification",
+  "expectations": [
+    {"text": "Discovers commands from CLAUDE.md", "passed": true, "evidence": "Read CLAUDE.md and ran npm test, npm run lint, npm run build"},
+    {"text": "Runs P0 universal checks", "passed": false, "evidence": "Old skill has no P0 check step. Only runs project-specific test/lint/build."},
+    {"text": "Runs all three project checks", "passed": true, "evidence": "All three passed"},
+    {"text": "Reports verified facts only", "passed": true, "evidence": "Reports exit codes and output"}
+  ]
+}

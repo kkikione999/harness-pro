@@ -1,0 +1,6 @@
+{
+  "eval_id": 2,
+  "eval_name": "assess-autonomous-operation",
+  "prompt": "Assess the scaffolding state of /Users/josh_folder/harness-pro-for-vibe/harness-blogs and tell me what's missing for autonomous agent operation",
+  "assertions": []
+}

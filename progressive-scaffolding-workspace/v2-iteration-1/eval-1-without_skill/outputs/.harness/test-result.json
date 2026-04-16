@@ -1,0 +1,1 @@
+{"status":"pass","passed":4,"failed":0,"total":4,"tests":[{"test":"cli_binary","status":"pass"},{"test":"node_runtime","status":"pass","version":"v25.3.0"},{"test":"cli_version","status":"pass","version":"2.1.88 (Claude Code)"},{"test":"source_structure","status":"pass","file_count":1888},],"timestamp":"2026-04-09T20:19:25+08:00"}

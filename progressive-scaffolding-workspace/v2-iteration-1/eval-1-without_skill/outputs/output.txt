@@ -1,0 +1,189 @@
+================================================================================
+PROGRESSIVE SCAFFOLDING — ASSESSMENT + GENERATION REPORT
+Target: /Users/josh_folder/Open-ClaudeCode
+Model: sonnet
+Date: 2026-04-09
+================================================================================
+
+=== PROJECT TYPE DETECTION ===
+Project: Open-ClaudeCode (Anthropic Claude Code CLI v2.1.88)
+Type: CLI (confidence: high)
+  Evidence: package/package.json has "bin": { "claude": "cli.js" }
+  Source: src/ with 1888 TypeScript/TSX files
+
+=== CONTROLLABILITY ASSESSMENT (E1-E4) ===
+
+--- BEFORE SCAFFOLDING ---
+E1_EXECUTE: Level 2
+  Evidence: Has Makefile + npm scripts (package/package.json)
+
+E2_INTERVENE: Level 2
+  Evidence: Can write files; start/stop scripts present
+
+E3_INPUT: Level 2
+  Evidence: Environment variable usage detected in source
+
+E4_ORCHESTRATE: Level 2
+  Evidence: Makefile with multi-step targets
+
+Controllability Score: 8/12
+
+--- AFTER SCAFFOLDING ---
+E1_EXECUTE: Level 2 (no change)
+E2_INTERVENE: Level 2 (no change)
+E3_INPUT: Level 3 (+1 — health.sh JSON output, verify.sh env vars)
+E4_ORCHESTRATE: Level 3 (+1 — test-auto.sh, CI pipeline, analyze-deps.sh)
+
+Controllability Score: 10/12 (+2)
+
+=== OBSERVABILITY ASSESSMENT (O1-O4) ===
+
+--- BEFORE SCAFFOLDING ---
+O1_FEEDBACK: Level 3
+  Evidence: 40+ files with console.log/console.error; 70+ with JSON.stringify
+
+O2_PERSIST: Level 2
+  Evidence: .harness/observability/logs/ directory; test-result.json persisted
+
+O3_QUERYABLE: Level 2
+  Evidence: log.sh search pattern; jq available
+
+O4_ATTRIBUTE: Level 3
+  Evidence: trace.sh correlation ID injection; correlation IDs in src/main.tsx,
+           src/tools/AgentTool/AgentTool.tsx, src/tasks/RemoteAgentTask/...
+
+Observability Score: 10/12
+
+--- AFTER SCAFFOLDING ---
+O1_FEEDBACK: Level 3 (no change)
+O2_PERSIST: Level 2 (no change — still no structured logging framework)
+O3_QUERYABLE: Level 2 (no change)
+O4_ATTRIBUTE: Level 3 (no change)
+
+Observability Score: 10/12 (no change)
+
+=== VERIFICATION ASSESSMENT (V1-V3) ===
+
+--- BEFORE SCAFFOLDING ---
+V1_EXIT_CODE: Level 2
+  Evidence: Makefile verify/test-auto targets return exit codes
+
+V2_SEMANTIC: Level 1
+  Evidence: No machine-readable test output detected
+
+V3_AUTOMATED: Level 2
+  Evidence: test-auto.sh automated; no CI pipeline
+
+Verification Score: 5/9
+
+--- AFTER SCAFFOLDING ---
+V1_EXIT_CODE: Level 2 (no change)
+V2_SEMANTIC: Level 3 (+2 — test-result.json, health.sh JSON, analyze-deps --json)
+V3_AUTOMATED: Level 3 (+1 — ci-pipeline.yml GitHub Actions CI)
+
+Verification Score: 8/9 (+3)
+
+=== SUMMARY SCORECARD ===
+
+| Dimension       | Before | After | Change |
+|----------------|--------|-------|--------|
+| E1 Execute      | L2     | L2    | 0      |
+| E2 Intervene     | L2     | L2    | 0      |
+| E3 Input        | L2     | L3    | +1     |
+| E4 Orchestrate  | L2     | L3    | +1     |
+| Controllability | 8/12   | 10/12 | +2     |
+| O1 Feedback     | L3     | L3    | 0      |
+| O2 Persist      | L2     | L2    | 0      |
+| O3 Queryable    | L2     | L2    | 0      |
+| O4 Attribute    | L3     | L3    | 0      |
+| Observability   | 10/12  | 10/12 | 0      |
+| V1 Exit Code    | L2     | L2    | 0      |
+| V2 Semantic     | L1     | L3    | +2     |
+| V3 Automated    | L2     | L3    | +1     |
+| Verification    | 5/9    | 8/9   | +3     |
+| TOTAL           | 23/33  | 28/33 | +5     |
+
+USABLE: YES (all 9 dimensions meet or exceed Level 2)
+
+=== GENERATED SCAFFOLDING FILES ===
+
+.harness.new/controllability/Makefile
+  - Targets: help, run, stop, test, verify, test-auto, clean, logs
+  - Chains: make verify && make test-auto
+
+.harness.new/controllability/start.sh
+  - Generates CORRELATION_ID via uuidgen
+  - Starts CLI with PID tracking
+  - Logs to .harness/observability/logs/
+
+.harness.new/controllability/stop.sh
+  - Kills process by PID file
+  - Falls back to pkill
+
+.harness.new/controllability/verify.sh
+  - Checks PID file and process liveness
+  - HTTP health check with configurable endpoint (HEALTH_ENDPOINT env var)
+  - Returns exit 0 on healthy, 1 on unhealthy
+
+.harness.new/controllability/test-auto.sh
+  - Detects npm/go/Makefile test frameworks
+  - Runs tests with tee to /tmp/test-output.txt
+  - Outputs JSON result: {status, framework, timestamp}
+
+.harness.new/controllability/analyze-deps.sh
+  - Scans TypeScript/TSX/JS source for relative imports
+  - Builds module dependency graph (src/moduleA -> src/moduleB)
+  - DFS cycle detection with cycle count
+  - Modes: --cycles, --json, --dot (GraphViz)
+
+.harness.new/controllability/lint-import-direction.sh
+  - Enforces layer hierarchy: utils -> services -> tools
+  - Detects violations of layer direction (lower importing higher)
+  - Modes: --fix (suggest fixes), --verbose
+
+.harness.new/observability/log.sh
+  - recent [count]: tail last N log lines
+  - search <pattern>: grep across logs
+  - follow: tail -f live log
+
+.harness.new/observability/health.sh
+  - JSON output: {status, pid, timestamp, http_status}
+  - Checks process liveness + optional HTTP endpoint
+
+.harness.new/observability/trace.sh
+  - Wraps any command with CORRELATION_ID injection
+  - Usage: CORRELATION_ID=xxx .harness/observability/trace.sh <command>
+
+.harness.new/ci/ci-pipeline.yml
+  - 4 jobs: lint, dependency-check, health, verify
+  - Triggers: push to main/master/develop, PRs
+  - verify job: needs all above, if: always(), runs test-auto
+
+=== PRIORITY GAPS (Top 5) ===
+
+1. O2 Persist (L2): No structured logging framework (winston/pino/zap)
+   Fix: npm install pino; use pino() for JSON log persistence
+
+2. O3 Queryable (L2): Logs grep-searchable but not aggregatable
+   Fix: Integrate a query engine or use jq + JSON logs for Level 3
+
+3. V2 Semantic (improved to L3): Was L1, now has JSON test results
+   Status: RESOLVED
+
+4. E3 Input (improved to L3): Was L2, now has env vars + JSON health
+   Status: RESOLVED
+
+5. E4 Orchestrate (improved to L3): Was L2, now has CI pipeline
+   Status: RESOLVED
+
+=== RECOMMENDATIONS ===
+
+1. Enable CI: cp .harness.new/ci/ci-pipeline.yml .github/workflows/ci.yml
+2. Add structured logging: npm install pino @types/pino
+3. Create metrics.sh: Add basic metric query script
+4. Add .env.example: Document required environment variables
+5. CI artifact upload: Upload test-result.json as GitHub Actions artifact
+
+================================================================================
+END OF REPORT
+================================================================================

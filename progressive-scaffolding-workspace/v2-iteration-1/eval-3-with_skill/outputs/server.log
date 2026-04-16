@@ -1,0 +1,9 @@
+{"level":"INFO","timestamp":"2026-04-09T12:24:11.086Z","component":"api","message":"Server started","metadata":{"port":3000}}
+{"level":"INFO","timestamp":"2026-04-09T12:24:12.043Z","correlationId":"","component":"harness","message":"db_connect_attempt","metadata":{"host":"wrong-host.local","port":"5432"}}
+{"level":"INFO","timestamp":"2026-04-09T12:24:12.043Z","correlationId":"","component":"harness","message":"db_connection_failed","metadata":{"host":"wrong-host.local","port":"5432","error":"Connection refused"}}
+{"level":"INFO","timestamp":"2026-04-09T12:24:12.054Z","correlationId":"","component":"harness","message":"harness_request","metadata":{"url":"/harness/exec","method":"POST"}}
+{"level":"INFO","timestamp":"2026-04-09T12:24:12.055Z","correlationId":"","component":"harness","message":"harness_exec","metadata":{"fn":"setHarnessOverride","args":["DB_HOST","localhost"]}}
+{"level":"INFO","timestamp":"2026-04-09T12:24:12.062Z","correlationId":"","component":"harness","message":"db_connect_attempt","metadata":{"host":"localhost","port":"5432"}}
+{"level":"INFO","timestamp":"2026-04-09T12:24:12.062Z","correlationId":"","component":"harness","message":"db_connection_success","metadata":{"host":"localhost","port":"5432"}}
+{"level":"INFO","timestamp":"2026-04-09T12:24:12.068Z","correlationId":"","component":"harness","message":"db_connect_attempt","metadata":{"host":"localhost","port":"5432"}}
+{"level":"INFO","timestamp":"2026-04-09T12:24:12.068Z","correlationId":"","component":"harness","message":"db_connection_success","metadata":{"host":"localhost","port":"5432"}}

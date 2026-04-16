@@ -1,0 +1,31 @@
+{
+  "eval_id": 3,
+  "eval_name": "self-debug-loop",
+  "prompt": "I have a broken Node.js API server at /tmp/test-api. The /api/users endpoint returns 500. Using the progressive-scaffolding skill, first add scaffolding to make the app observable and controllable, then use the control plane to self-diagnose and fix the bug. Work completely autonomously — do not ask me for help.",
+  "assertions": [
+    {
+      "name": "observe-phase",
+      "check": "Agent reads structured JSON logs (O1: harnessLog output)"
+    },
+    {
+      "name": "decide-phase",
+      "check": "Agent identifies root cause and selects setHarnessOverride() or injectState()"
+    },
+    {
+      "name": "act-phase",
+      "check": "Agent calls the injected function (node -e with HARNESS_CONTROL=1)"
+    },
+    {
+      "name": "verify-phase",
+      "check": "Agent confirms /api/users returns 200 after fix"
+    },
+    {
+      "name": "no-human-touchpoints",
+      "check": "Agent completes entire loop without asking user questions"
+    },
+    {
+      "name": "fixes-root-cause",
+      "check": "The fix is a code change or harness override, not just documenting the bug"
+    }
+  ]
+}

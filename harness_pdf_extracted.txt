@@ -1,0 +1,666 @@
+--- PAGE 1 ---
+OpenAI Harness Engineering 完整实施指南
+基于 OpenAI 官方技术博客的深度分析，适用于 codex CLI、KIMI CLI、claude code 等 AI 编程工具
+目录
+1. 项目概述与核心数据
+2. 自动化流程部署详解
+3. 容器化实施详解
+4. Agent 自动分配机制
+5. 实施路线图
+6. CLI 工具集成方案
+一、项目概述与核心数据
+1.1 项目成就
+OpenAI 团队通过 Harness Engineering 方法论，在 5 个月内实现了：
+指标 数据
+代码行数 ~100 万行
+人工编写代码 0 行
+Pull Requests ~1500 个
+工程师人数 3 人
+平均 PR/工程师/天 3.5 个
+开发时间 5 个月
+效率提升 10 倍（相比手动编写）
+1.2 核心理念
+Humans steer. Agents execute.
+（人类掌舵，Agent 执行）
+关键转变：
+• 从” 编写代码” → “设计环境、明确意图、构建反馈循环”
+• 从” 工程师打字” → “工程师编排”
+• 从” 人类审查每个 PR” → “Agent-to-Agent 审查”
+二、自动化流程部署详解
+2.1 CI/CD 流程设计
+初始脚手架自动化
+Kimi.ai 生成
+--- PAGE 2 ---
+# 步骤 1: 创建空 git 仓库
+git init harness-project
+# 步骤 2: 使用 Codex CLI 生成完整脚手架
+codex-cli --generate-scaffold \
+--template=fullstack \
+--framework=react-node \
+--output=.
+自动生成内容：
+组件 生成工具 说明
+仓库结构 Codex CLI + GPT-5 完整的目录层级
+CI 配置 Codex CLI + GPT-5 GitHub Actions/GitLab CI
+格式化规则 Codex CLI + GPT-5 ESLint/Prettier 配置
+包管理器设置 Codex CLI + GPT-5 npm/pnpm/workspace
+应用框架 Codex CLI + GPT-5 React/Express 基础代码
+AGENTS.md Codex CLI + GPT-5 Agent 工作指导文档
+知识库验证 CI 作业
+# .github/workflows/knowledge-base-validation.yml
+name: Knowledge Base Validation
+on:
+push:
+branches: [main]
+pull_request:
+branches: [main]
+schedule:
+- cron: '0 */6 * * *' # 每 6 小时运行
+jobs:
+validate-knowledge-base:
+runs-on: ubuntu-latest
+steps:
+- uses: actions/checkout@v4
+- name: Check Cross-Links
+run: custom-linter --check-links
+- name: Validate Architecture
+run: structure-test --config=architecture.json
+- name: Check Documentation Freshness
+run: doc-validator --stale-threshold=7d
+doc-gardening:
+runs-on: ubuntu-latest
+Kimi.ai 生成
+--- PAGE 3 ---
+if: github.event.schedule
+steps:
+- uses: actions/checkout@v4
+- name: Run Doc Gardening Agent
+run: codex-cli --task="scan-and-fix-docs"
+2.2 六层架构约束系统
+Types → Config → Repo → Service → Runtime → UI
+架构规则：
+• 每层只能依赖” 前面” 的层
+• 跨领域关注点通过 Providers 进入
+• 自定义 Linter 强制执行依赖方向
+// linter-config.json
+{
+"layerRules": {
+"Types": {
+"allowedImports": [],
+"exportTo": ["Config", "Repo", "Service", "Runtime", "UI"]
+},
+"Config": {
+"allowedImports": ["Types"],
+"exportTo": ["Repo", "Service", "Runtime", "UI"]
+},
+"Repo": {
+"allowedImports": ["Types", "Config"],
+"exportTo": ["Service", "Runtime", "UI"]
+},
+"Service": {
+"allowedImports": ["Types", "Config", "Repo"],
+"exportTo": ["Runtime", "UI"]
+},
+"Runtime": {
+"allowedImports": ["Types", "Config", "Repo", "Service"],
+"exportTo": ["UI"]
+},
+"UI": {
+"allowedImports": ["Types", "Config", "Repo", "Service", "Runtime"],
+"exportTo": []
+}
+}
+}
+2.3 Agent 端到端自动化流程
+用户提示
+↓
+Kimi.ai 生成
+--- PAGE 4 ---
+验证代码库状态 ←────┐
+↓ │
+复现 bug │
+↓ │
+录制失败视频 │
+↓ │
+实现修复 │
+↓ │
+验证修复 ─────────┘
+↓
+录制解决视频
+↓
+打开 PR
+↓
+响应反馈 ←───────┐
+↓ │
+检测构建失败 │
+↓ │
+修复构建 ────────┘
+↓
+合并更改
+2.4 执行计划管理
+仓库知识存储结构：
+repository/
+├── AGENTS.md # Agent 工作指导（由 Codex 编写）
+├── ARCHITECTURE.md # 顶层领域和包分层映射
+├── docs/
+│ ├── design-docs/ # 设计文档
+│ ├── exec-plans/ # 执行计划（一等工件）
+│ │ ├── active/ # 活跃执行计划
+│ │ ├── completed/ # 已完成执行计划
+│ │ └── tech-debt-tracker.md # 技术债务追踪
+│ ├── generated/ # 生成文档
+│ ├── product-specs/ # 产品规格
+│ └── references/ # 参考资料
+└── src/ # 源代码
+三、容器化实施详解
+3.1 核心容器化策略
+Git Worktree 级别隔离：
+• 每个代码更改在独立的容器化环境中运行
+• 临时可观察性堆栈（每个 worktree 独立）
+• 完全隔离的应用版本，任务完成后自动拆除
+Kimi.ai 生成
+--- PAGE 5 ---
+3.2 容器化架构
+┌─────────────────────────────────────────────────────────────────┐
+│ 容器化运行时环境 │
+│ ┌─────────────────────────────────────────────────────────┐ │
+│ │ Git Worktree Container │ │
+│ │ ┌─────────────┐ ┌─────────────┐ ┌─────────────────┐ │ │
+│ │ │ App Server │ │ Application │ │ Chrome DevTools │ │ │
+│ │ │ (stdio) │ │ Instance │ │ Protocol │ │ │
+│ │ └──────┬──────┘ └─────────────┘ └─────────────────┘ │ │
+│ │ │ │ │
+│ │ ┌──────┴───────────────────────────────────────────┐ │ │
+│ │ │ 临时可观察性堆栈 (Observable Stack) │ │ │
+│ │ │ ┌─────────┐ ┌───────────┐ ┌───────────────┐ │ │ │
+│ │ │ │ Loki │ │ Prometheus│ │ Jaeger/Tempo │ │ │ │
+│ │ │ │ (LogQL) │ │ (PromQL) │ │ (Traces) │ │ │ │
+│ │ │ └─────────┘ └───────────┘ └───────────────┘ │ │ │
+│ │ └──────────────────────────────────────────────────┘ │ │
+│ └─────────────────────────────────────────────────────────┘ │
+│ │ │
+│ ┌─────────┴──────────┐ │
+│ │ WebSocket Tunnel │ ← 持久网络连接 │
+│ └─────────┬──────────┘ │
+└──────────────────────────────┼──────────────────────────────────┘
+│
+┌──────────┴──────────┐
+│ Codex Agent Runtime│
+│ (LogQL/PromQL 查询) │
+└─────────────────────┘
+3.3 Worktree 隔离实现
+# worktree_manager.py
+import docker
+import uuid
+from datetime import datetime
+class WorktreeContainerManager:
+def __init__(self):
+self.client = docker.from_env()
+self.active_containers = {}
+def create_worktree_environment(self, worktree_path, git_commit):
+""" 为新的 worktree 创建隔离的容器环境"""
+worktree_id = str(uuid.uuid4())[:8]
+# 创建容器网络
+network = self.client.networks.create(
+name=f"worktree-net-{worktree_id}"
+,
+driver="bridge"
+)
+Kimi.ai 生成
+--- PAGE 6 ---
+# 启动可观察性堆栈
+observability_stack = self._start_observability_stack(worktree_id, network)
+# 启动应用容器
+container = self.client.containers.run(
+image="harness-app:latest"
+,
+name=f"app-worktree-{worktree_id}"
+,
+volumes={
+worktree_path: {"bind": "/app/src"
+,
+"mode": "ro"},
+f"worktree-data-{worktree_id}": {"bind": "/app/data"
+,
+"mode": "rw"}
+},
+environment={
+"WORKTREE_ID": worktree_id,
+"GIT_COMMIT": git_commit,
+"LOG_ENDPOINT": f"http://loki-{worktree_id}:3100"
+,
+"METRICS_ENDPOINT": f"http://prometheus-{worktree_id}:9090"
+},
+network=network.name,
+detach=True,
+labels={
+"harness.worktree.id": worktree_id,
+"harness.lifecycle": "ephemeral"
+}
+)
+return worktree_id
+def destroy_worktree_environment(self, worktree_id):
+""" 销毁 worktree 环境及其所有资源"""
+# 停止并移除容器、网络、数据卷
+pass
+3.4 可观察性堆栈配置
+# docker-compose.observability.yml
+version: '3.8'
+services:
+loki:
+image: grafana/loki:2.9.0
+container_name: loki-${WORKTREE_ID}
+ports:
+-
+"3100"
+volumes:
+- ./config/loki-config.yml:/etc/loki/local-config.yaml
+- loki-data-${WORKTREE_ID}:/loki
+command: -config.file=/etc/loki/local-config.yaml
+networks:
+- observability-net
+Kimi.ai 生成
+--- PAGE 7 ---
+promtail:
+image: grafana/promtail:2.9.0
+container_name: promtail-${WORKTREE_ID}
+volumes:
+- ./config/promtail-config.yml:/etc/promtail/config.yml
+- /var/log/app:/var/log/app:ro
+command: -config.file=/etc/promtail/config.yml
+networks:
+- observability-net
+prometheus:
+image: prom/prometheus:v2.47.0
+container_name: prometheus-${WORKTREE_ID}
+ports:
+-
+"9090"
+volumes:
+- ./config/prometheus.yml:/etc/prometheus/prometheus.yml
+- prometheus-data-${WORKTREE_ID}:/prometheus
+command:
+-
+'--config.file=/etc/prometheus/prometheus.yml'
+-
+'--storage.tsdb.retention.time=24h'
+networks:
+- observability-net
+jaeger:
+image: jaegertracing/all-in-one:1.49
+container_name: jaeger-${WORKTREE_ID}
+ports:
+-
+"16686"
+environment:
+- COLLECTOR_OTLP_ENABLED=true
+networks:
+- observability-net
+3.5 App Server 容器化
+# Dockerfile.app-server
+FROM golang:1.21-alpine AS builder
+WORKDIR /build
+RUN apk add --no-cache git
+COPY go.mod go.sum ./
+RUN go mod download
+COPY . .
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo \
+-o app-server ./cmd/app-server
+FROM alpine:3.18
+RUN apk add --no-cache ca-certificates git
+Kimi.ai 生成
+--- PAGE 8 ---
+RUN addgroup -g 1001 -S appgroup && \
+adduser -S appuser -u 1001 -G appgroup
+WORKDIR /app
+COPY --from=builder /build/app-server .
+RUN chown -R appuser:appgroup /app
+USER appuser
+EXPOSE 8080
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+CMD wget --no-verbose --tries=1 --spider http://localhost:8080/health || exit 1
+ENTRYPOINT ["./app-server"]
+CMD ["--mode=stdio"]
+3.6 Kubernetes 部署
+# k8s/app-server-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+name: app-server
+namespace: harness
+spec:
+replicas: 3
+selector:
+matchLabels:
+app: app-server
+template:
+metadata:
+labels:
+app: app-server
+spec:
+securityContext:
+runAsNonRoot: true
+runAsUser: 1001
+containers:
+- name: app-server
+image: harness/app-server:latest
+ports:
+- name: http
+containerPort: 8080
+resources:
+requests:
+memory: "256Mi"
+cpu: "250m"
+limits:
+Kimi.ai 生成
+--- PAGE 9 ---
+memory: "1Gi"
+cpu: "1000m"
+env:
+- name: MODE
+value: "websocket"
+- name: MAX_CORE_THREADS
+value: "10"
+livenessProbe:
+httpGet:
+path: /health
+port: http
+initialDelaySeconds: 10
+periodSeconds: 30
+readinessProbe:
+httpGet:
+path: /ready
+port: http
+initialDelaySeconds: 5
+periodSeconds: 10
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+name: app-server-hpa
+namespace: harness
+spec:
+scaleTargetRef:
+apiVersion: apps/v1
+kind: Deployment
+name: app-server
+minReplicas: 3
+maxReplicas: 20
+metrics:
+- type: Resource
+resource:
+name: cpu
+target:
+type: Utilization
+averageUtilization: 70
+- type: Resource
+resource:
+name: memory
+target:
+type: Utilization
+averageUtilization: 80
+Kimi.ai 生成
+--- PAGE 10 ---
+四、Agent 自动分配机制
+4.1 App Server 核心架构
+┌─────────────────────────────────────────────────────────────────┐
+│ Codex App Server Architecture │
+├─────────────────────────────────────────────────────────────────┤
+│ ┌──────────────┐ ┌──────────────────┐ ┌─────────────────┐ │
+│ │ stdio reader │→ │ Message Processor │→ │ Thread Manager │ │
+│ └──────────────┘ └──────────────────┘ └─────────────────┘ │
+│ ↓ ↓ ↓ │
+│ ┌─────────────────────────────────────────────────────────┐ │
+│ │ Core Threads (Sessions) │ │
+│ │ ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌─────────┐ │ │
+│ │ │ Thread1 │ │ Thread2 │ │ Thread3 │ │ ThreadN │ │ │
+│ │ │ Agent A │ │ Agent B │ │ Agent C │ │ Agent X │ │ │
+│ │ └─────────┘ └─────────┘ └─────────┘ └─────────┘ │ │
+│ └─────────────────────────────────────────────────────────┘ │
+└─────────────────────────────────────────────────────────────────┘
+4.2 三层任务原语模型
+┌─────────────────────────────────────────────────────────────┐
+│ Task Assignment Hierarchy │
+├─────────────────────────────────────────────────────────────┤
+│ │
+│ Level 1: Thread Level (会话级) │
+│ ┌─────────────────────────────────────────────────────┐ │
+│ │ Thread: 用户和 agent 之间持续会话的持久容器 │ │
+│ │ • 创建、恢复、分叉、归档 │ │
+│ │ • 持久化事件历史，支持客户端重连 │ │
+│ └─────────────────────────────────────────────────────┘ │
+│ ↓ │
+│ Level 2: Turn Level (工作单元级) │
+│ ┌─────────────────────────────────────────────────────┐ │
+│ │ Turn: 由用户输入启动的 agent 工作单元 │ │
+│ │ • 包含表示中间步骤的 item 序列 │ │
+│ │ • 在 agent 完成输出时结束 │ │
+│ └─────────────────────────────────────────────────────┘ │
+│ ↓ │
+│ Level 3: Item Level (原子操作级) │
+│ ┌─────────────────────────────────────────────────────┐ │
+│ │ Item: 输入/输出的原子单元，有明确生命周期 │ │
+│ │ • item/started → item/*/delta → item/completed │ │
+│ └─────────────────────────────────────────────────────┘ │
+│ │
+└─────────────────────────────────────────────────────────────┘
+4.3 Git Worktree 并行隔离
+Project Repository (.git object store - shared)
+│
+Kimi.ai 生成
+--- PAGE 11 ---
+├── Main Worktree (人类开发)
+│ └── HEAD: main branch
+│
+├── Worktree A (Agent A)
+│ └── HEAD: agent/feature-auth
+│
+├── Worktree B (Agent B)
+│ └── HEAD: agent/bugfix-123
+│
+├── Worktree C (Agent C)
+│ └── HEAD: agent/perf-optimize
+│
+└── Worktree N (Agent N)
+└── HEAD: agent/refactor-module
+Worktree 特性：
+属性 独立 共享
+HEAD
+Index (staging area)
+Working tree files
+Object database
+Remote configuration
+4.4 并行执行模式
+模式 1：每 Agent 任务一个 Worktree
+# 设置脚本
+TASK=$1
+BRANCH="agent-$(date +%s)-${TASK}"
+DIR="../project-${TASK}"
+git worktree add -b "$BRANCH" "$DIR" main
+cd "$DIR" && npm install
+模式 2：对比/集成 Agent（Ensemble）
+# 同时生成 N 个解决方案
+for i in 1 2 3; do
+git worktree add -b "attempt-refactor-$i" "../project-attempt-$i" main
+claude --worktree "attempt-$i" "Refactor payment module" &
+done
+wait
+# 评估输出并选择最佳方案
+模式 3：流水线阶段
+Stage 1 (分析 Agent) → 提交 spec 到分支
+↓
+Stage 2 (实现 Agent) → 读取 spec，提交代码
+↓
+Kimi.ai 生成
+--- PAGE 12 ---
+Stage 3 (审查 Agent) → 读取代码，提交审查意见
+↓
+Stage 4 (测试 Agent) → 读取审查，编写测试
+4.5 沙箱权限模式
+模式 文件修改 网络访问 外部命令 适用场景
+Read-only 安全扫描、分析
+Workspace (项目内) 常规开发任务
+Full-access 需要外部依赖的任务
+4.6 自动化演进路径
+Phase 1: 人类审查每个 PR
+↓
+Phase 2: 推动几乎所有审查工作由 agent-to-agent 处理
+↓
+Phase 3: 给定单个提示，agent 可以端到端驱动新功能
+Agent 端到端能力：
+• 验证代码库当前状态
+• 复现 bug → 实现修复 → 验证修复
+• 录制失败/解决方案视频
+• 打开 PR → 响应反馈 → 合并更改
+• 检测和修复构建失败
+• 扫描陈旧文档，更新质量等级
+五、实施路线图
+5.1 四阶段实施计划
+Phase 1: 基础设置 (Week 1-2)
+├── 安装 Codex CLI 和 App Server
+├── 配置 Git worktree 支持
+├── 设置沙箱权限模式
+└── 创建基础 Skills
+Phase 2: 单 Agent 工作流 (Week 3-4)
+├── 配置自动化任务
+├── 建立审查队列工作流
+├── 集成 CI/CD 管道
+└── 培训团队使用模式
+Phase 3: 多 Agent 并行 (Week 5-8)
+├── 配置 worktree 隔离
+Kimi.ai 生成
+--- PAGE 13 ---
+├── 建立 Agent-to-Agent 审查
+├── 实施负载均衡策略
+└── 监控和优化性能
+Phase 4: 规模化运营 (Week 9+)
+├── 背景任务自动化
+├── 跨项目 Agent 编排
+├── 高级协作工作流
+└── 持续改进和调优
+5.2 关键配置文件
+AGENTS.md 模板：
+# AGENTS.md - Agent 工作指导
+## 角色定义
+- **Feature Builder**: 构建新功能
+- **Bug Fixer**: 修复 bug
+- **Refactor Agent**: 代码重构
+- **Doc Gardener**: 文档维护
+## 工作流规范
+### 代码生成规则
+- 遵循六层架构（Types → Config → Repo → Service → Runtime → UI）
+- 所有代码必须通过自定义 Linter
+- 每个功能必须包含测试
+### 测试要求
+- 单元测试覆盖率 > 80%
+- 集成测试覆盖关键路径
+- E2E 测试覆盖用户旅程
+### 文档标准
+- 所有公共 API 必须有 JSDoc
+- 复杂逻辑必须有行内注释
+- 变更必须更新相关文档
+## 架构约束
+- 层依赖规则（见 linter-config.json）
+- 命名规范：camelCase 函数，PascalCase 类型
+- 文件大小限制：最大 500 行
+## 工具集成
+### CLI 命令模板
+```bash
+# 生成新功能
+codex-cli --task="implement-feature" --spec="docs/exec-plans/active/feature.md"
+# 修复 bug
+codex-cli --task="fix-bug" --issue="#123"
+Kimi.ai 生成
+--- PAGE 14 ---
+# 重构代码
+codex-cli --task="refactor" --target="src/services/payment"
+** 自动化配置示例：**
+```yaml
+# .codex/automations/daily-triage.yaml
+name: daily-issue-triage
+schedule: "0 9 * * *"
+skill: issue-triage
+instructions: |
+Review all open issues from the past 24 hours:
+1. Categorize by priority (P0-P3)
+2. Identify duplicate issues
+3. Suggest assignments based on labels
+4. Flag issues needing human attention
+sandbox: read-only
+auto_archive: true
+5.3 监控指标
+指标 描述 目标值
+PR/工程师/天 生产力指标 3.5+
+Agent 成功率 任务完成率 >90%
+人类干预率 需要人类介入的比例 <10%
+Token 使用量 成本控制 监控和优化
+六、CLI 工具集成方案
+6.1 工具对比
+特性 Codex CLI/App Claude Code KIMI CLI
+多 Agent 并行 原生支持 –worktree 有限支持
+Git Worktree 内置 内置 手动配置
+自动化调度 Automations 有限 有限
+WebSocket 实验性
+Skills 系统 丰富生态 有限 有限
+IDE 集成 VS Code, Xcode 有限 有限
+6.2 Codex CLI 集成
+# 启动 App Server
+codex app-server --listen stdio://
+# 生成 TypeScript schema
+codex app-server generate-ts --out ./schemas
+Kimi.ai 生成
+--- PAGE 15 ---
+# 执行模式（自动化任务）
+codex exec "task description"
+# 使用 worktree 隔离
+codex --worktree=feature-auth "Implement authentication"
+6.3 Claude Code 集成
+# 使用 worktree 隔离
+claude --worktree=feature-x "Implement feature X"
+# 多 Agent 并行
+claude --worktree=attempt-1 "Refactor payment module" &
+claude --worktree=attempt-2 "Refactor payment module" &
+claude --worktree=attempt-3 "Refactor payment module" &
+wait
+6.4 KIMI CLI 集成
+# 基础使用
+kimi-cli --config=AGENTS.md --task="implement-feature"
+# 配合 worktree
+kimi-cli --worktree=feature-y --task="Implement feature Y"
+6.5 多 Agent 协作模式
+Claude-Codex 协作示例：
+workflow:
+name: "claude-codex-collaboration"
+phase1_planning:
+agent: Claude Code
+tasks:
+- 创建架构计划
+- 存储到共享内存
+phase2_review:
+agent: Codex CLI
+tasks:
+- 检索计划
+- 执行架构审查
+- 存储反馈
+phase3_implementation:
+agent: Claude Code
+tasks:
+- 检索反馈
+- 实现功能
+Kimi.ai 生成
+--- PAGE 16 ---
+七、关键成功因素
+1. 严格的架构约束：六层架构确保代码组织一致性
+2. 自动化验证：CI 作业持续验证知识库完整性
+3. 文档即代码：执行计划作为一等工件管理
+4. Agent 自治：最小化人工干预的端到端自动化
+5. 反馈闭环：人类专注于优先级和验收标准
+6. 知识版本化：所有知识存在于版本化制品中
+7. 工程师作为编排者：从打字员转变为系统设计者
+参考资源
+1. OpenAI Harness Engineering Blog
+2. Unlocking the Codex Harness
+3. Codex CLI Repository
+4. Codex App Server Documentation
+文档版本 : 1.0 最后更新 : 2026 年
+Kimi.ai 生成
