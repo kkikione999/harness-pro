@@ -1,0 +1,82 @@
+[
+  {
+    "query": "帮我加个搜索框到用户列表页面，能按用户名和邮箱搜索",
+    "should_trigger": true
+  },
+  {
+    "query": "我们需要一个权限管理模块，不同角色看到不同的菜单和数据，现在所有人看到的都一样",
+    "should_trigger": true
+  },
+  {
+    "query": "这个页面太丑了能不能改好看一点，至少把那个绿色的按钮换个颜色，还有字体太小了",
+    "should_trigger": true
+  },
+  {
+    "query": "can we add a dark mode toggle to the settings page? users have been asking for it since like october",
+    "should_trigger": true
+  },
+  {
+    "query": "老板说要在报表页面加个导出Excel的按钮，用户点一下就能下载当前筛选条件下的数据，格式要跟现在页面上显示的一样",
+    "should_trigger": true
+  },
+  {
+    "query": "现在登录流程太复杂了，我想把那个短信验证码的步骤去掉，只保留密码登录就行",
+    "should_trigger": true
+  },
+  {
+    "query": "our users keep complaining the dashboard takes 5+ seconds to load, we need to add pagination and lazy loading for the data tables",
+    "should_trigger": true
+  },
+  {
+    "query": "用户下单之后收不到确认邮件，我看了一下代码里面根本没有发邮件的逻辑，需要加上去",
+    "should_trigger": true
+  },
+  {
+    "query": "做个注册页面",
+    "should_trigger": true
+  },
+  {
+    "query": "这个表单提交之后数据总是丢，我看了下是state管理有问题，需要重新设计一下提交流程",
+    "should_trigger": true
+  },
+  {
+    "query": "解释一下这个 auth middleware 是做什么的，我看不太懂",
+    "should_trigger": false
+  },
+  {
+    "query": "帮我看看这个PR有什么问题，https://github.com/our-org/our-app/pull/234",
+    "should_trigger": false
+  },
+  {
+    "query": "这个测试为什么一直fail啊，跑了好几次都是同一个错误",
+    "should_trigger": false
+  },
+  {
+    "query": "你觉得React和Vue哪个更适合我们这个项目？我们现在还没定技术栈",
+    "should_trigger": false
+  },
+  {
+    "query": "帮我把上个commit revert一下，那个是误提交的",
+    "should_trigger": false
+  },
+  {
+    "query": "帮我写个README，要包含安装步骤和使用说明",
+    "should_trigger": false
+  },
+  {
+    "query": "这段代码有什么性能问题吗？我感觉列表渲染的时候有点卡",
+    "should_trigger": false
+  },
+  {
+    "query": "把 config.json 里面的 timeout 从 10 改成 30",
+    "should_trigger": false
+  },
+  {
+    "query": "这个 /api/users 接口返回的数据格式是怎样的，有哪些字段？",
+    "should_trigger": false
+  },
+  {
+    "query": "what does the auth middleware do in this codebase? I see it's imported everywhere but I'm not sure about the flow",
+    "should_trigger": false
+  }
+]

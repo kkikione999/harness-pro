@@ -1,0 +1,11 @@
+{
+  "eval_id": 1,
+  "eval_name": "context-md-written-by-create-plan-baseline",
+  "prompt": "Create an implementation plan using the OLD create-plan skill (before context.md integration). Work in the /tmp/test-context-eval directory. Report whether context.md was created.",
+  "assertions": [
+    {
+      "text": "context.md does NOT exist (old skill version does not create it)",
+      "description": "context_md_not_created_baseline"
+    }
+  ]
+}

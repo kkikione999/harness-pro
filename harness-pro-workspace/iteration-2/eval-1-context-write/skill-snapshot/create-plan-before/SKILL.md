@@ -52,29 +52,6 @@ For the critical paths identified in step 2:
 
 Why: Without understanding existing logic, you can't plan changes that fit. "Modify function X to also handle Y" requires knowing what X currently does and why.
 
-### Step 3.5: Write context.md (Knowledge Transfer)
-
-After reading the codebase, write your discoveries to `.harness/file-stack/{feature-id}/context.md`. This transfers knowledge from the plan agent (who reads many files, expensive) to the worker agent (fresh spawn, zero memory) so the worker doesn't have to re-read everything.
-
-Create the file with this structure:
-```markdown
-# Context: {feature-id}
-
-## Patterns Discovered
-- {convention 1: e.g., error handling uses Result type with map_err}
-- {naming pattern: e.g., test files are co-located with source, _test suffix}
-- {architecture pattern: e.g., repository pattern for data access}
-
-## Key Insights
-- {gotcha 1: e.g., the auth middleware is in external/, not shared/}
-- {design decision: e.g., events are dispatched synchronously in-process}
-
-## File Locations
-- {useful file paths discovered during reading}
-```
-
-Why: The worker agent will read this instead of re-exploring the entire codebase. Be specific — include actual paths, function names, and concrete patterns. This is the most important output of the plan phase.
-
 ## Plan Structure
 
 Write the plan to `features/{feature-id}/plan.md`:
@@ -201,8 +178,6 @@ Three-step code reading:
   1. Recent commits + docs
   2. Interface and boundary scanning
   3. Key path core logic
-        ↓
-Write context.md to .harness/file-stack/{feature-id}/context.md
         ↓
 If feature not atomic → flag and go back to harness-pro-decompose-requirement
         ↓

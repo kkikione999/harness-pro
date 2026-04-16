@@ -65,19 +65,9 @@ Agent({
     Files to touch: {list only this milestone's files}
     Steps: {list only this milestone's Change steps}
 
-    FIRST: Read the shared context from .harness/file-stack/{feature-id}/context.md
-    This contains patterns, conventions, and insights from the plan agent — use it to understand the codebase before diving in.
-
     TDD: test → implement → refactor for each step.
     Only touch the listed files. Run tests after each step.
     If blocked, stop and report back. Do NOT read the full plan — only your assigned steps.
-
-    Behavioral rules:
-    - Think before coding: state assumptions, resolve ambiguity by reading code, push back if plan doesn't match reality.
-    - Simplicity: every line traces to a Change entry. No speculative features, no abstractions for single-use code.
-    - Surgical: don't improve adjacent code. Match existing style. Remove only orphans YOUR changes created.
-    - Goal-driven: each step needs a verifiable check. Loop until verified.
-
     When done: TaskUpdate completed, message lead with summary.
   `
 })
@@ -148,7 +138,7 @@ Monitor team progress using TaskList. As workers complete milestones:
 
 After all milestones pass review:
 1. Run the full Validation section from the plan
-2. All pass → update `.harness/file-stack/{feature-id}/documentation.md` with completion status → shut down team → invoke harness-pro-complete-work
+2. All pass → update file-stack → shut down team → invoke harness-pro-complete-work
 3. Any fail → fix → re-run
 
 ### Failure Handling
@@ -180,78 +170,26 @@ For trivial tasks (≤3 steps, straightforward changes):
 
 ## File Stack Updates
 
-During execution, maintain `.harness/file-stack/{feature-id}/`:
+During execution, maintain `.harness/file-stack/`:
 
 | File | When to Update | What to Write |
 |------|---------------|---------------|
-| `context.md` | Read first at start | Patterns, conventions, gotchas from plan agent (READ this before reading source files) |
 | `prompt.md` | Once at start | Original requirement + feature summary |
 | `plan.md` | After each milestone | Check off completed steps |
 | `documentation.md` | At milestones and significant events | Decisions made, surprises found, current status |
 
-**context.md is the key knowledge-transfer layer**: the plan agent's discoveries live here. Workers READ it first, then append surprises/gotchas they encounter so future workers (or milestone reviewers) benefit.
-
 ## Behavioral Guidelines for Workers
 
-These guidelines bias toward caution over speed. For truly trivial tasks, use judgment — but default to caution.
+### Think Before Each Change
+- What am I changing and why?
+- Is there a simpler way?
+- If multiple interpretations exist, read the code to resolve ambiguity
 
-### 1. Think Before Coding
+### Minimum Code, Nothing Speculative
+Every line of code must trace back to a specific Change entry in the plan. No features beyond spec. No abstractions for code used only once. No error handling for impossible scenarios.
 
-Don't assume. Don't hide confusion. Surface tradeoffs.
-
-Before implementing each change:
-- State your assumptions explicitly. If uncertain, investigate the code first.
-- If multiple interpretations of the plan exist, read the code to resolve ambiguity. If still unclear, report back — don't pick silently.
-- If a simpler approach exists, say so. Push back when warranted.
-- If something in the plan doesn't match reality, stop. Name what's confusing. Report back.
-
-### 2. Simplicity First
-
-Minimum code that solves the problem. Nothing speculative.
-
-- Every line of code must trace back to a specific Change entry in the plan.
-- No features beyond what was asked. No "flexibility" or "configurability" that wasn't requested.
-- No abstractions for code used only once. No error handling for impossible scenarios.
-- If you write 200 lines and it could be 50, rewrite it.
-- Ask yourself: "Would a senior engineer say this is overcomplicated?" If yes, simplify.
-
-### 3. Surgical Changes
-
-Touch only what you must. Clean up only your own mess.
-
-When editing existing code:
-- Don't "improve" adjacent code, comments, or formatting.
-- Don't refactor things that aren't broken.
-- Match existing style, even if you'd do it differently.
-- If you notice unrelated dead code, mention it — don't delete it.
-
-When your changes create orphans:
-- Remove imports/variables/functions that YOUR changes made unused.
-- Don't remove pre-existing dead code unless asked.
-
-The test: every changed line should trace directly to a Change entry in the plan.
-
-### 4. Goal-Driven Execution
-
-Define success criteria. Loop until verified.
-
-Transform plan steps into verifiable goals:
-
-| Vague goal | Verifiable goal |
-|---|---|
-| "Add validation" | "Write tests for invalid inputs, then make them pass" |
-| "Fix the bug" | "Write a test that reproduces it, then make it pass" |
-| "Refactor X" | "Ensure tests pass before and after" |
-
-For multi-step work, state a brief plan with verification checkpoints:
-
-```
-1. [Step] → verify: [check]
-2. [Step] → verify: [check]
-3. [Step] → verify: [check]
-```
-
-Strong success criteria let you loop independently. Weak criteria ("make it work") require constant clarification — so define them upfront.
+### Surgical Changes
+Touch only the files and functions the plan specifies. Don't "improve" adjacent code. Match existing style. Clean up only your own mess.
 
 ## Surprise Handling
 

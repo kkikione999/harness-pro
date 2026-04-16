@@ -1,0 +1,119 @@
+{
+  "metadata": {
+    "skill_name": "harness-pro-create-plan",
+    "skill_path": "<path/to/skill>",
+    "executor_model": "<model-name>",
+    "analyzer_model": "<model-name>",
+    "timestamp": "2026-04-16T15:16:55Z",
+    "evals_run": [
+      1
+    ],
+    "runs_per_configuration": 3
+  },
+  "runs": [
+    {
+      "eval_id": 1,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 3,
+        "failed": 0,
+        "total": 3,
+        "time_seconds": 85.1,
+        "tokens": 52398,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": ".harness/file-stack/test-feature/context.md exists after planning",
+          "passed": true,
+          "evidence": "File created at /tmp/test-context-eval/.harness/file-stack/test-feature/context.md with 19 lines of content"
+        },
+        {
+          "text": "context.md contains a Patterns Discovered section",
+          "passed": true,
+          "evidence": "Section exists: '## Patterns Discovered' with 5 pattern entries (TypeScript utility, Record mapping, toLocaleString, input validation, error handling)"
+        },
+        {
+          "text": "context.md contains a File Locations section",
+          "passed": true,
+          "evidence": "Section exists: '## File Locations' with 3 entries (src/format.ts, features/index, plan location)"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 1,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 1,
+        "failed": 0,
+        "total": 1,
+        "time_seconds": 141.6,
+        "tokens": 57224,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "context.md does NOT exist (old skill version does not create it)",
+          "passed": true,
+          "evidence": "OLD version workflow ends at saving plan.md without Step 3.5. Agent confirmed: 'context.md was NOT created by using the OLD version of the skill'"
+        }
+      ],
+      "notes": []
+    }
+  ],
+  "run_summary": {
+    "with_skill": {
+      "pass_rate": {
+        "mean": 1.0,
+        "stddev": 0.0,
+        "min": 1.0,
+        "max": 1.0
+      },
+      "time_seconds": {
+        "mean": 85.1,
+        "stddev": 0.0,
+        "min": 85.1,
+        "max": 85.1
+      },
+      "tokens": {
+        "mean": 52398.0,
+        "stddev": 0.0,
+        "min": 52398,
+        "max": 52398
+      }
+    },
+    "without_skill": {
+      "pass_rate": {
+        "mean": 1.0,
+        "stddev": 0.0,
+        "min": 1.0,
+        "max": 1.0
+      },
+      "time_seconds": {
+        "mean": 141.6,
+        "stddev": 0.0,
+        "min": 141.6,
+        "max": 141.6
+      },
+      "tokens": {
+        "mean": 57224.0,
+        "stddev": 0.0,
+        "min": 57224,
+        "max": 57224
+      }
+    },
+    "delta": {
+      "pass_rate": "+0.00",
+      "time_seconds": "-56.5",
+      "tokens": "-4826"
+    }
+  },
+  "notes": []
+}

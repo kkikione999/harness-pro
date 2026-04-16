@@ -1,12 +1,6 @@
 ---
 name: harness-pro-decompose-requirement
-description: >
-  Decompose user requirements into atomic features with spec, DAG, and verifiable acceptance criteria.
-  Use this skill whenever: a user describes a new feature request, asks to add functionality, describes a bug
-  that needs fixing, mentions a requirement or user story, says "I want to add/fix/change/build/implement X",
-  or provides any task-oriented request that needs to be broken down before implementation. This is the FIRST
-  and ONLY entry point in the harness engineering workflow. Simple modifications skip the full flow (fast path).
-  Complex requirements go through full decomposition with spec definition and DAG planning.
+description: "You MUST use this as the FIRST step before ANY implementation work — adding features, modifying functionality, fixing bugs, building new capabilities, or changing existing behavior. Trigger whenever a user describes wanting to add, change, build, fix, or implement something, even if it seems simple. Chinese triggers: 添加功能、新增功能、修改功能、加一个、实现一个、做个、帮我做、我要加、我想实现、优化一下、重构一下、改一下、新需求、需求是这样的、我想做一个、帮我完成. English triggers: 'I want to add', 'implement', 'build a', 'create a new', 'modify the', 'change how', 'fix the', 'we need a new feature', 'requirement', 'user story'. This skill decides fast-path (simple → direct TDD) vs full-path (decompose into atomic features). Do NOT skip to coding — always decompose first."
 ---
 
 # Requirement Decomposition Skill
@@ -96,6 +90,10 @@ This is the core mechanism. The goal is to make your understanding **visible** s
 3. **User confirms or corrects** — The user tells you what's right and what's wrong.
 
 4. **Repeat** until both sides are aligned.
+
+### UI Wireframing
+
+When a user describes UI-related requirements (screens, layouts, components, pages), draw a simple ASCII wireframe to verify your understanding. Use box-drawing characters (`+`, `-`, `|`) and brackets for interactive elements (`[Button]`). Keep it minimal — one screen per diagram, focus on layout structure only.
 
 ### Good questions vs Bad questions
 
