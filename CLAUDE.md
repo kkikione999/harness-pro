@@ -8,7 +8,7 @@
 
 当前CLAUDE.md是实施设计.claude/skills的工具的真源。
 
-设计的参考来源：PROGRESSIVE-RULES-DESIGN.md，harness_pdf_extracted.txt，wechat_article_clean.html
+设计的参考来源：reference-article
 
 skill工具目录为：.claude/skills。
 
