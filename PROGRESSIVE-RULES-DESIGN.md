@@ -1,9 +1,5 @@
 # Progressive-Rules 设计文档
 
-> **基于4人辩论小队（architect, philosopher, pragmatist, critic）深度讨论**
-> **产出日期**: 2026-04-05
-> **状态**: 设计完成，等待实施
-
 ---
 
 ## 辩论概览

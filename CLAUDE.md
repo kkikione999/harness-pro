@@ -4,13 +4,30 @@
 
 ## 项目概述
 
-本仓库是 **Harness Engineering** 的核心文档和参考实现库。
+本仓库是 **Harness Engineering** 的实现仓库，目标是制作一套skill工具实现harness engneering的流程。
+
+当前CLAUDE.md是实施设计.claude/skills的工具的真源。
+
+设计的参考来源：PROGRESSIVE-RULES-DESIGN.md，harness_pdf_extracted.txt，wechat_article_clean.html
+
+skill工具目录为：.claude/skills。
 
 **Harness Engineering** 是一套让 AI Agent 能够自主、可控、高质量完成软件需求的方法论。其核心原则是：
 
 > **Agent = Model + Harness**。Harness 提供模型以外的一切：上下文管理、质量控制、反馈循环、执行环境。
 
 **终极目标**：人提出需求，AI 端到端完成全部流程，无需人工干预。
+
+## RULES
+
+1. 不要把你的猜测当作事实。
+2. 只修改必须改动的部分，只清理自己造成的问题。
+
+## 设计核心理念
+
+1. harness的设计流程要简单，不要过度复杂
+
+
 
 ## 核心概念
 

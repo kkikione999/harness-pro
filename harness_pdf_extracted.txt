@@ -1,24 +1,6 @@
 --- PAGE 1 ---
 OpenAI Harness Engineering 完整实施指南
-基于 OpenAI 官方技术博客的深度分析，适用于 codex CLI、KIMI CLI、claude code 等 AI 编程工具
-目录
-1. 项目概述与核心数据
-2. 自动化流程部署详解
-3. 容器化实施详解
-4. Agent 自动分配机制
-5. 实施路线图
-6. CLI 工具集成方案
-一、项目概述与核心数据
-1.1 项目成就
-OpenAI 团队通过 Harness Engineering 方法论，在 5 个月内实现了：
-指标 数据
-代码行数 ~100 万行
-人工编写代码 0 行
-Pull Requests ~1500 个
-工程师人数 3 人
-平均 PR/工程师/天 3.5 个
-开发时间 5 个月
-效率提升 10 倍（相比手动编写）
+
 1.2 核心理念
 Humans steer. Agents execute.
 （人类掌舵，Agent 执行）
@@ -657,10 +639,4 @@ Kimi.ai 生成
 5. 反馈闭环：人类专注于优先级和验收标准
 6. 知识版本化：所有知识存在于版本化制品中
 7. 工程师作为编排者：从打字员转变为系统设计者
-参考资源
-1. OpenAI Harness Engineering Blog
-2. Unlocking the Codex Harness
-3. Codex CLI Repository
-4. Codex App Server Documentation
-文档版本 : 1.0 最后更新 : 2026 年
-Kimi.ai 生成
+
