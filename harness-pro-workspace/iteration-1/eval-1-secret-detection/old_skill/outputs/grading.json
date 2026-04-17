@@ -1,9 +1,0 @@
-{
-  "eval_id": 1,
-  "eval_name": "secret-detection-baseline",
-  "prompt": "Old skill milestone boundary check on project with hardcoded API key",
-  "expectations": [
-    {"text": "Detects hardcoded secret", "passed": false, "evidence": "Old skill has NO lint check step. Goes directly from worker completion to spawning reviewer. Hardcoded secret was not detected."},
-    {"text": "Agent fixes before proceeding", "passed": false, "evidence": "No fix attempted because no detection mechanism exists in old skill."}
-  ]
-}

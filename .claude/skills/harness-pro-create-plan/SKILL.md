@@ -3,7 +3,7 @@ name: harness-pro-create-plan
 description: >
   Transform an atomic feature definition into a concrete execution plan (plan.md).
   Use this skill whenever: you have an atomic feature definition (from harness-pro-decompose-requirement
-  or features/{id}/index.md) and need to create an execution plan before coding. Also trigger
+  or docs/features/{id}/index.md) and need to create an execution plan before coding. Also trigger
   when the user says "plan this feature", "make a plan", "create implementation plan",
   "how do we implement this feature", or when moving from requirement decomposition to
   implementation planning. Even if the user doesn't explicitly ask for a "plan" — any time
@@ -71,13 +71,14 @@ Create the file with this structure:
 
 ## File Locations
 - {useful file paths discovered during reading}
-```
 
-Why: The worker agent will read this instead of re-exploring the entire codebase. Be specific — include actual paths, function names, and concrete patterns. This is the most important output of the plan phase.
+## Worker Discoveries
+<!-- Worker agents append discoveries here during execution. Format: - [M{n}] {discovery} -->
+
 
 ## Plan Structure
 
-Write the plan to `features/{feature-id}/plan.md`:
+Write the plan to `docs/features/{feature-id}/plan.md`:
 
 ```markdown
 # Plan: {feature-id}
@@ -195,7 +196,7 @@ After saving plan.md, you MUST immediately invoke the `harness-pro-execute-task`
 ## Workflow Summary
 
 ```
-Read atomic feature definition (features/{id}/index.md)
+Read atomic feature definition (docs/features/{id}/index.md)
         ↓
 Three-step code reading:
   1. Recent commits + docs
@@ -210,7 +211,7 @@ Write plan.md (Context, Changes, Order, Milestones, Validation, Risks)
         ↓
 Self-check (files real, validation complete, order consistent, no orphans)
         ↓
-Save to features/{id}/plan.md
+Save to docs/features/{id}/plan.md
         ↓
 AUTOMATIC: immediately invoke harness-pro-execute-task (do NOT ask user)
 ```

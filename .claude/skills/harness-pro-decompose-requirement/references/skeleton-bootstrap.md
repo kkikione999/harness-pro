@@ -8,19 +8,35 @@ This file is loaded only when decompose-requirement detects that the project ske
 - CLAUDE.md does not exist in the project root
 - This runs ONCE per project; subsequent entries skip directly to Two Paths
 
+## Three-Layer Progressive Disclosure Structure
+
+```
+项目根目录/
+├── CLAUDE.md                    ← L0 入口（几乎不变）
+└── docs/
+    ├── ARCHITECTURE.md          ← L1 架构（很少变动）
+    └── features/                ← L2 Feature（每个 feature 更新）
+        └── {feature-id}/
+            ├── index.md         ← Feature 定义
+            └── plan.md          ← 执行计划
+```
+
+- **不需要 design-docs/**，feature 里的 index.md + plan.md 已覆盖
+- **不需要预先创建 features/ 下任何内容**，第一个 feature 时自然创建
+
 ## Two Scenarios
 
 ### Scenario A: New Project
 
 The codebase is empty or near-empty (no src/, no existing application code).
 
-**Action**: Create `CLAUDE.md` with the template below, filling in what you know from the user's context.
+**Action**: Create `CLAUDE.md` and `docs/ARCHITECTURE.md` with templates below, filling in what you know from the user's context.
 
 ### Scenario B: Existing Project
 
 The codebase has substantial existing code (src/, lib/, app/, etc.).
 
-**Action**: Scan the codebase first, then generate `CLAUDE.md` reflecting the project's actual state.
+**Action**: Scan the codebase first, then generate `CLAUDE.md` and `docs/ARCHITECTURE.md` reflecting the project's actual state.
 
 **Scanning process**:
 1. Directory structure → infer architecture layers
@@ -47,7 +63,12 @@ The codebase has substantial existing code (src/, lib/, app/, etc.).
 
 ## Project Structure
 
-{Brief description of directory layout. For existing projects, describe what actually exists.}
+```
+src/                    — 源代码
+docs/                   — 文档（见 ARCHITECTURE.md）
+features/               — Feature Registry（第一个 feature 时创建）
+.harness/               — Harness 执行状态（不要修改）
+```
 
 ## Development
 
@@ -67,32 +88,40 @@ The codebase has substantial existing code (src/, lib/, app/, etc.).
 
 ## Architecture
 
-{For existing projects: describe the actual architecture layers and dependency direction.}
-{For new projects: leave as placeholder, will be filled during first create-plan.}
+详见 `docs/ARCHITECTURE.md`（渐进填充，架构很少变动）
 
 ## Conventions
-
-{For existing projects: patterns discovered from scanning.}
-{For new projects: basic constraints agreed with user.}
 
 - Naming: {convention}
 - Error handling: {convention}
 - Testing: {coverage requirement}
+- 文件限制: 单文件 ≤ 800 行
+- 禁止硬编码 secrets
+
+详见: `.claude/skills/harness-pro-execute-task/references/p0-lint-guide.md`
 
 ## Harness Engineering
 
 This project uses Harness Engineering workflow:
-- Feature definitions live in `features/{feature-id}/index.md`
-- Execution plans live in `features/{feature-id}/plan.md`
+- Feature definitions live in `docs/features/{feature-id}/index.md`
+- Execution plans live in `docs/features/{feature-id}/plan.md`
 - Working state lives in `.harness/file-stack/`
-- Directories are created when first needed (no empty shells)
+- Architecture lives in `docs/ARCHITECTURE.md`
 ```
 
 ## After Bootstrap
 
 Once CLAUDE.md is created:
 
-1. Create `.harness/` directory structure if it doesn't exist:
+1. Create directory structure:
+   ```
+   docs/
+   └── ARCHITECTURE.md          ← 见下方占位模板
+   ```
+
+2. Create `docs/ARCHITECTURE.md` with placeholder content (see template below)
+
+3. Create `.harness/` directory structure if it doesn't exist:
    ```
    .harness/
    ├── controllability/
@@ -100,9 +129,47 @@ Once CLAUDE.md is created:
    └── file-stack/
    ```
 
-2. Do NOT create these yet — they'll be created when first needed:
-   - `features/` → created by decompose-requirement when first feature is defined
-   - `docs/` → created when first design doc is needed
-   - `ARCHITECTURE.md` → created when first architectural decision is made
+4. Do NOT create `docs/features/` yet — created by decompose-requirement when first feature is defined
 
-3. Proceed to normal decompose-requirement flow (Two Paths)
+5. Proceed to normal decompose-requirement flow (Two Paths)
+
+## docs/ARCHITECTURE.md Placeholder Template
+
+```markdown
+# Architecture
+
+> Architecture rarely changes. This file is updated when significant architectural patterns are discovered during feature implementation.
+
+## 分层结构
+
+(待填充：第一个 feature 完成后从 context.md 提取)
+
+<!-- 填充后示例：
+Types → Config → Repo → Service → Runtime → UI
+-->
+
+## 依赖规则
+
+(待填充：基于实际代码依赖关系)
+
+<!-- 填充后示例：
+高层可 import 低层，反向禁止。
+详细规则见: .claude/skills/.../p0-lint-guide.md
+-->
+
+## 入口点
+
+- 应用入口: (待填充)
+- API 层: (待填充)
+
+## Feature 概览
+
+| ID | Name | 状态 |
+|----|------|------|
+| (待填充) | | |
+
+---
+
+更新时机：ARCHITECTURE.md 由 complete-work 自动检测 context.md 的架构发现后更新。
+不需要手动维护。
+```

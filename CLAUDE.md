@@ -66,14 +66,19 @@ Done
 
 ## Skill 架构（6个）
 
-| Skill | 职责 | 产出 | 替代 |
-|-------|------|------|------|
-| **harness-pro-decompose-requirement** | 需求拆解 + spec + DAG | `features/{id}/index.md` | brainstorming, using-superpowers |
-| **harness-pro-create-plan** | 生成实施路径 | `features/{id}/plan.md` | writing-plans, plan-feature |
-| **harness-pro-execute-task** | TDD执行 + DAG编排 + milestone review | 代码 + 测试 | subagent-driven-dev, execute-plan, executing-plans |
-| **harness-pro-complete-work** | 验证 + 文档维护 + 集成 | 合并/PR/清理 | finishing-branch, verification-before-completion |
-| **harness-pro-test-driven-development** | RED→GREEN→REFACTOR | 测试代码（由 execute-task 调用） | 不变 |
-| **harness-pro-systematic-debugging** | 根因调查→修复 | 根因分析+修复（由 execute-task 调用） | 不变 |
+| Skill | 职责 | 产出 |
+|-------|------|------|
+| **harness-pro-decompose-requirement** | 需求拆解 + spec + DAG | `docs/features/{id}/index.md` |
+| **harness-pro-create-plan** | 生成实施路径 | `docs/features/{id}/plan.md` |
+| **harness-pro-execute-task** | TDD执行 + DAG编排 + milestone review | 代码 + 测试 |
+| **harness-pro-complete-work** | 验证 + 文档维护 + 架构更新 | 合并/PR/清理 |
+| **harness-pro-test-driven-development** | RED→GREEN→REFACTOR | 测试代码（由 execute-task 调用） |
+| **harness-pro-systematic-debugging** | 根因调查→修复 | 根因分析+修复（由 execute-task 调用） |
+
+### ARCHITECTURE.md 更新时机
+
+- **CLAUDE.md**：很低频率，技术栈/开发命令变化时，由 decompose-requirement 触发（需用户确认）
+- **docs/ARCHITECTURE.md**：低频率，context.md 有架构发现时，由 complete-work 自动更新（只追加，不覆盖）
 
 ### 质量体系
 
@@ -107,17 +112,17 @@ Feature 是面向开发的最小单元。atomic 的含义：
 每个 feature 包含：
 
 ```
-{feature-name}/
+docs/features/{feature-id}/
 ├── index.md           # Feature 定义：边界、职责、依赖
-└── code_scope.md     # 代码入口区域 + 命名模式（轻量指向性）
+└── plan.md            # 实施路径：文件 + 里程碑 + 验证
 ```
 
-**code_scope 是轻量的、指向性的**，不是完整地图。
+**code_scope_hint 是轻量的、指向性的**，不是完整地图。
 
 - `app/lib/features/{feature}/` — 入口区域
 - `**/*_{feature}*.dart` — 命名模式
 
-AI 由此进入，自己探索、自己理解、自己把理解写入工作文件夹。
+AI 由此进入，自己探索、自己理解、自己把理解写入 context.md。
 
 ### Feature 对应关系
 
@@ -238,45 +243,47 @@ out_of_bound: [string]        # 明确不做的事
 
 AI 在 checklist 未通过时，必须明确告知用户还缺什么，而不是假装完成。
 
+## 三层渐进披露
+
+| 层级 | 文件 | 变动频率 | 内容 |
+|------|------|----------|------|
+| **L0** | CLAUDE.md | 几乎不变 | 项目入口、指路 |
+| **L1** | docs/ARCHITECTURE.md | 很少变动 | 架构分层、依赖规则 |
+| **L2** | docs/features/{id}/ | 每个 feature 更新 | Feature 边界、计划 |
+
+详见下方目录结构。
+
 ## 目录结构
 
 ```
 项目根目录/
-├── AGENTS.md                         # Agent 工作指导（角色、规则、约束）
-├── ARCHITECTURE.md                   # 顶层架构和分层映射
-│
-├── features/                         # Feature Registry（持久化，source of truth）
-│   └── {feature-id}/
-│       ├── index.md                  # scope + spec + 验收标准 + 技术方向
-│       └── plan.md                   # 实施路径（文件定位 + 任务拆分 + milestones）
+├── CLAUDE.md                         # L0 入口（Agent 启动必读）
 │
 ├── docs/
-│   ├── design-docs/                  # 设计文档
-│   ├── exec-plans/                   # 执行计划（一等工件）
-│   │   ├── active/                   # 活跃执行计划
-│   │   ├── completed/                # 已完成执行计划
-│   │   └── tech-debt-tracker.md      # 技术债务追踪
-│   ├── product-specs/                # 产品规格
-│   └── references/                   # 参考资料
+│   ├── ARCHITECTURE.md               # L1 架构（很少变动，按需读）
+│   └── features/                    # L2 Feature Registry
+│       └── {feature-id}/
+│           ├── index.md             # Feature 定义
+│           └── plan.md              # 实施路径
 │
-├── .harness/                         # 执行时工作文件夹（非持久化）
-│   ├── controllability/              # 服务生命周期管理
-│   │   ├── Makefile                  # 标准命令：run, stop, test, verify
-│   │   ├── start.sh                  # 服务启动（带 correlation ID）
-│   │   ├── stop.sh                   # 服务停止
-│   │   └── verify.sh                 # 健康检查（PID + HTTP endpoint）
-│   ├── observability/                # 运行时可观测性
-│   │   ├── log.sh                    # 日志检索
-│   │   ├── health.sh                 # 健康诊断
-│   │   └── trace.sh                  # 分布式追踪分析
-│   ├── file-stack/                   # 活文档（执行时状态）
-│   │   ├── prompt.md                 # 当前任务原始需求
-│   │   ├── plan.md                   # 当前活跃计划（进度勾选）
-│   │   └── documentation.md          # 实时状态、决策记录、意外发现
-│   └── traces/                       # 执行轨迹
+├── .harness/                        # 执行时工作文件夹（非持久化）
+│   ├── controllability/            # 服务生命周期管理
+│   │   ├── Makefile                # 标准命令：run, stop, test, verify
+│   │   ├── start.sh                # 服务启动（带 correlation ID）
+│   │   ├── stop.sh                 # 服务停止
+│   │   └── verify.sh               # 健康检查（PID + HTTP endpoint）
+│   ├── observability/              # 运行时可观测性
+│   │   ├── log.sh                  # 日志检索
+│   │   ├── health.sh               # 健康诊断
+│   │   └── trace.sh                # 分布式追踪分析
+│   ├── file-stack/                 # 活文档（执行时状态）
+│   │   ├── prompt.md               # 当前任务原始需求
+│   │   ├── plan.md                 # 当前活跃计划（进度勾选）
+│   │   ├── context.md              # 代码阅读发现（Plan→Worker 知识传递）
+│   │   └── documentation.md       # 实时状态、决策记录
+│   └── traces/                     # 执行轨迹
 │
-└── src/                              # 源代码
-```
+└── src/                             # 源代码
 
 ## 工作文件夹
 
@@ -364,4 +371,4 @@ make logs       # 查看最近日志
 3. 替换 `{{project-name}}` 为实际项目名
 4. 在 `.harness/golden-principles/` 添加 Golden Principles
 5. 在 `.harness/evals/` 设置回归测试 Evals
-6. 建立 `features/` 的 atomic feature 集合
+6. 建立 `docs/features/` 的 atomic feature 集合（第一个 feature 时自动创建）

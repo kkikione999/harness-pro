@@ -77,6 +77,43 @@ check_todos() {
     fi
 }
 
+# --- P0-004: Worker Discoveries appended to context.md ---
+# Checks that workers are recording gotchas/conventions discovered during execution
+check_worker_discoveries() {
+    local context_files
+    context_files=$(find .harness/file-stack -name "context.md" 2>/dev/null || true)
+
+    if [ -z "$context_files" ]; then
+        echo "INFO P0-004: No context.md files found (may be first milestone)"
+        return
+    fi
+
+    local all_valid=true
+    for f in $context_files; do
+        # Check Worker Discoveries section exists
+        if grep -q "## Worker Discoveries" "$f" 2>/dev/null; then
+            # Extract Worker Discoveries content (lines after the header, until next ## or end)
+            local discoveries
+            discoveries=$(awk '/^## Worker Discoveries/,/^##|^#|^$/ {if(/^## Worker Discoveries/){next}; if(/^- \[M[0-9]+\]/){print}}' "$f" 2>/dev/null || true)
+
+            if [ -n "$discoveries" ]; then
+                # Validate format: each entry must be - [M{n}] text
+                local invalid
+                invalid=$(echo "$discoveries" | grep -vE '^\- \[M[0-9]+\] ' || true)
+                if [ -n "$invalid" ]; then
+                    echo "WARNING P0-004: Malformed Worker Discoveries in $f:"
+                    echo "$invalid" | head -3
+                    all_valid=false
+                else
+                    echo "PASS P0-004: Worker Discoveries well-formed ($(echo "$discoveries" | wc -l | tr -d ' ') entries in $f)"
+                fi
+            else
+                echo "INFO P0-004: Worker Discoveries section empty in $f (no new discoveries this milestone)"
+            fi
+        fi
+    done
+}
+
 # --- Run all checks ---
 echo "=== P0 Universal Checks ==="
 echo "Project: $PROJECT_ROOT"
@@ -85,6 +122,7 @@ echo ""
 check_secrets
 check_file_size
 check_todos
+check_worker_discoveries
 
 echo ""
 if [ "$VIOLATIONS" -gt 0 ]; then

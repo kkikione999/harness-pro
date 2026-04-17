@@ -1,9 +1,0 @@
-{
-  "eval_id": 1,
-  "eval_name": "secret-detection",
-  "prompt": "Run P0 checks at milestone boundary on project with hardcoded API key",
-  "expectations": [
-    {"text": "Detects hardcoded secret via P0-001", "passed": true, "evidence": "New skill ran p0-checks.sh, detected CRITICAL P0-001 violation in Sources/Config.swift"},
-    {"text": "Agent fixes before proceeding to reviewer", "passed": true, "evidence": "Replaced hardcoded apiKey with ProcessInfo.processInfo.environment lookup, re-ran P0 checks, all passed"}
-  ]
-}

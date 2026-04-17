@@ -1,6 +1,6 @@
 ---
 name: harness-pro-decompose-requirement
-description: "You MUST use this as the FIRST step before ANY implementation work — adding features, modifying functionality, fixing bugs, building new capabilities, or changing existing behavior. Trigger whenever a user describes wanting to add, change, build, fix, or implement something, even if it seems simple. Chinese triggers: 添加功能、新增功能、修改功能、加一个、实现一个、做个、帮我做、我要加、我想实现、优化一下、重构一下、改一下、新需求、需求是这样的、我想做一个、帮我完成. English triggers: 'I want to add', 'implement', 'build a', 'create a new', 'modify the', 'change how', 'fix the', 'we need a new feature', 'requirement', 'user story'. This skill decides fast-path (simple → direct TDD) vs full-path (decompose into atomic features). Do NOT skip to coding — always decompose first."
+description: "You MUST use this as the FIRST step before ANY implementation work — adding features, modifying functionality, fixing bugs, building new capabilities, or changing existing behavior. Trigger whenever a user describes wanting to add, change, build, fix, or implement something, even if it seems simple. Chinese triggers: 添加功能、新增功能、修改功能、加一个、实现一个、做个、帮我做、我要加、我想实现、优化一下、重构一下、改一下、新需求、需求是这样的、我想做一个、帮我完成. English triggers: 'I want to add', 'implement', 'build a', 'create a new', 'modify the', 'change how', 'fix the', 'we need a new feature', 'requirement', 'user story'. This skill decides fast-path (simple → direct TDD) vs full-path (decompose into atomic features). Feature definitions live in docs/features/{id}/index.md. Do NOT skip to coding — always decompose first."
 ---
 
 # Requirement Decomposition Skill
@@ -76,7 +76,7 @@ Only decompose what the user asked for. No "while we're at it" refactoring, no "
 ### 2. Read Context Before Asking
 
 Before asking the user any question, you must first:
-- Read existing features in `features/` to understand what already exists
+- Read existing features in `docs/features/` to understand what already exists
 - Scan the codebase structure to understand the project architecture
 - Check for related or overlapping features
 
@@ -200,7 +200,9 @@ An atomic feature is the smallest development unit that:
 
 ### Output Format
 
-Save each feature definition to `features/{feature-id}/index.md`:
+Save each feature definition to `docs/features/{feature-id}/index.md`:
+
+> Note: `docs/features/` directory is created automatically. Do not pre-create it.
 
 ```yaml
 id: {kebab-case-identifier}
@@ -235,10 +237,20 @@ code_scope_hint: {Entry directory + naming pattern}
 ### code_scope_hint guidelines
 
 Lightweight pointer, not a complete map:
-- Entry directory: `app/lib/features/{feature-name}/`
+- Entry directory: `app/lib/features/{feature-name}/` (or equivalent based on project structure)
 - Naming pattern: `**/*_{feature-name}*.dart` (or equivalent)
 
 The AI will explore from these entry points. Trust it.
+
+### Three-Layer Progressive Disclosure
+
+```
+L0: CLAUDE.md              — 项目入口，几乎不变
+L1: docs/ARCHITECTURE.md   — 架构参考，很少变动
+L2: docs/features/         — Feature 详情，每个 feature 更新
+```
+
+Feature definitions are saved to `docs/features/{feature-id}/index.md`.
 
 ## Termination Checklist
 
@@ -275,7 +287,7 @@ Skeleton check: CLAUDE.md exists?
   No → read references/skeleton-bootstrap.md → bootstrap → continue
   Yes → continue
         ↓
-Read context (features/, codebase structure)
+Read context (docs/features/, codebase structure)
         ↓
 ┌─ Is this covered by an existing feature?
 │
@@ -299,7 +311,7 @@ If multiple features: draw DAG (dependencies + execution order)
         ↓
 User confirms once (single handoff)
         ↓
-Save feature definitions to features/{id}/index.md
+Save feature definitions to docs/features/{id}/index.md
         ↓
 AUTOMATIC: immediately invoke harness-pro-create-plan (do NOT ask user)
 ```

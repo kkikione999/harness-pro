@@ -2,7 +2,7 @@
 name: harness-pro-execute-task
 description: >
   Execute implementation plans using TDD discipline with DAG orchestration and milestone reviews.
-  Use this skill whenever: you have a plan.md (from create-plan or features/{id}/plan.md) and need
+  Use this skill whenever: you have a plan.md (from create-plan or docs/features/{id}/plan.md) and need
   to implement it. Also trigger when the user says "execute this plan", "implement the plan",
   "start coding", "run the implementation", "let's build this", or when moving from planning to
   code implementation. Handles single features and multi-feature DAGs with parallel execution.
@@ -66,9 +66,7 @@ Agent({
     Steps: {list only this milestone's Change steps}
 
     FIRST: Read the shared context from .harness/file-stack/{feature-id}/context.md
-    This contains patterns, conventions, and insights from the plan agent — use it to understand the codebase before diving in.
-
-    TDD: test → implement → refactor for each step.
+    This contains patterns, conventions, and insights from the plan agent — use it to understand the codebase before diving in. Also append any new discoveries to the `## Worker Discoveries` section using the format: `- [M{N}] {discovery}`.
     Only touch the listed files. Run tests after each step.
     If blocked, stop and report back. Do NOT read the full plan — only your assigned steps.
 
@@ -78,7 +76,7 @@ Agent({
     - Surgical: don't improve adjacent code. Match existing style. Remove only orphans YOUR changes created.
     - Goal-driven: each step needs a verifiable check. Loop until verified.
 
-    When done: TaskUpdate completed, message lead with summary.
+    When done: append discoveries to context.md's Worker Discoveries section, then TaskUpdate completed, message lead with summary.
   `
 })
 ```
@@ -105,11 +103,11 @@ Run two things:
    ```bash
    bash .claude/skills/harness-pro-execute-task/scripts/p0-checks.sh
    ```
-   This script checks: hardcoded secrets (P0-001), file size limit 800 lines (P0-002), TODO/FIXME residuals (P0-003).
+   This script checks: hardcoded secrets (P0-001), file size limit 800 lines (P0-002), TODO/FIXME residuals (P0-003), Worker Discoveries append (P0-004).
 
 2. **Project-specific lint** (if available): Read `CLAUDE.md` Development section for the lint command. If not found, read `references/p0-lint-guide.md` for auto-detection patterns.
 
-CRITICAL violations from P0 checks → fix before reviewer. Project lint errors → fix before reviewer. Warnings → log and continue.
+CRITICAL violations from P0 checks → fix before reviewer. Project lint errors → fix before reviewer. P0-004 Worker Discoveries warnings → log and continue (advisory only).
 
 ### Step 3: Milestone Review
 

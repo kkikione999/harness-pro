@@ -62,7 +62,7 @@ State only verified facts: "xcodebuild test exited 0 with 7 tests passing" or "e
 **Any change that touches existing features must update their documentation.**
 
 1. Did this work modify any existing feature?
-   - Read `features/` to see which features exist
+   - Read `docs/features/` to see which features exist
    - Compare changed files against feature `code_scope_hint` entries
 
 2. For each affected feature, check:
@@ -73,7 +73,33 @@ State only verified facts: "xcodebuild test exited 0 with 7 tests passing" or "e
 3. If new files were created that belong to an existing feature:
    - Update `code_scope_hint` if naming patterns expanded
 
-**Principle: features/ is the source of truth. If it rots, the entire system degrades.**
+**Principle: docs/features/ is the source of truth. If it rots, the entire system degrades.**
+
+## Step 2.5: ARCHITECTURE.md Auto-Update
+
+Read `.harness/file-stack/{feature-id}/context.md` and check `## Worker Discoveries` for architectural findings.
+
+**Auto-update conditions** (update if ALL true):
+- Feature is the first feature implemented (or Architecture is empty)
+- OR discoveries contain new architectural patterns (new layers, dependency rules, entry points)
+
+**Update scope** (conservative — only add, rarely modify):
+- Add new patterns found to ## 分层结构
+- Add new dependency rules to ## 依赖规则
+- Add new entry points to ## 入口点
+- Add new feature to ## Feature 概览
+
+**Do NOT auto-update** for:
+- CLAUDE.md changes (these require user confirmation via decompose-requirement)
+- Minor implementation details
+- Refactoring-only changes
+
+**Format for updates**:
+```markdown
+## 分层结构
+<!-- 在现有内容后追加，不要覆盖 -->
+- {layer-name}: {brief description} (discovered in {feature-id})
+```
 
 ## Step 3: Integration Options
 
@@ -111,8 +137,12 @@ Step 1: Fresh Verification
   If any fail → fix → re-run
         ↓
 Step 2: Documentation Maintenance
-  Check features/ against actual changes
+  Check docs/features/ against actual changes
   Update index.md / plan.md if needed
+        ↓
+Step 2.5: ARCHITECTURE.md Auto-Update
+  Read context.md discoveries
+  If architectural findings → update ARCHITECTURE.md (only add, rarely modify)
         ↓
 Step 3: Integration
   Present options to user
