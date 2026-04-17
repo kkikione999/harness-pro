@@ -18,6 +18,18 @@
       "prompt": "用户反馈下单流程太慢了，从点击下单到看到确认页要 5 秒以上，需要优化",
       "expected_output": "应该走 Full path，先分析瓶颈（前端渲染？后端接口？数据库查询？），暴露对现有 feature 的关联判断（涉及订单 feature + 支付 feature），提出验收标准时挑战'快'的模糊定义，要求可量化的指标",
       "files": []
+    },
+    {
+      "id": 4,
+      "prompt": "在仪表盘页面添加一个折线图，显示最近7天的用户增长趋势",
+      "expected_output": "应该走 Full path，因为添加图表显示是一个新的用户-facing capability（不是简单的小改），即使实现简单也要创建新 feature。同时应该产出 UI 简笔画（wireframe）来确认图表在仪表盘中的位置和布局",
+      "files": []
+    },
+    {
+      "id": 5,
+      "prompt": "把START/STOP按钮的激活颜色从红色改成橙色，让它看起来更暖和",
+      "expected_output": "应该走 Fast path，因为这是纯视觉小改（颜色调整），不涉及新组件、新状态或新交互。START/STOP按钮属于audio-strobe feature，直接 TDD 执行修改颜色",
+      "files": []
     }
   ]
 }

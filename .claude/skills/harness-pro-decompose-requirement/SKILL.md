@@ -18,17 +18,49 @@ Check if `CLAUDE.md` exists in the project root. This file is the AI's entry poi
 
 ## Two Paths
 
+### Decision Tree (CRITICAL — Read Before Choosing Path)
+
+Before deciding fast or full path, you MUST first check the **feature registry**:
+
+```
+Is this requirement already covered by an existing feature?
+│
+├── NO → New feature required → Full Path (even if implementation is simple)
+│        Reason: adding chart display = new feature boundary, regardless of code complexity
+│
+└── YES → Check modification type:
+         │
+         ├── Small visual tweak ONLY (color, proportions, border radius, font size)?
+         │   └── YES → Does the target actually exist in the codebase?
+         │              │
+         │              ├── YES → Fast Path: direct TDD, no new feature needed
+         │              └── NO → Full Path: target doesn't exist, need clarification
+         │
+         └── Something more substantial (new component, new state, new interaction)?
+             └── YES → Full Path: update existing feature → plan → execute
+```
+
+**Why this matters**: Adding a chart page is a new feature even if the code is "just one component". The feature registry documents WHAT the system does, not how hard it is to code. If a user-facing capability is new, it's a new feature.
+
+**Edge case: target doesn't exist** — If the user asks to modify something that doesn't exist in the codebase (e.g., "change the submit button color" but there's no submit button), this is NOT a simple tweak — it's either a misunderstanding or a new component. Escalate to Full Path for clarification.
+
 ### Fast Path
 
-When the requirement is a simple modification that clearly maps to an existing feature or needs no decomposition:
+When the requirement is **ALL** of the following:
+- Maps to an **existing** feature
+- Is a **pure visual tweak** only (color, proportions, border radius, font size, spacing)
+- Does NOT add new components, new state, or new interactions
+- The target **actually exists** in the codebase
 
-1. AI judges simplicity autonomously (no explicit rules needed)
-2. If it's simple → execute directly with TDD + complete-work
-3. If during execution complexity exceeds expectations → escalate back to this skill
+Then:
+1. Execute directly with TDD + complete-work
+2. If during execution the target doesn't exist → escalate back to this skill (Full Path)
+
+**Edge case: target doesn't exist** — If you chose Fast Path but discover the UI element or target doesn't exist in the codebase, do NOT proceed with TDD. Escalate back to this skill for clarification. The user may be referring to something that needs to be created first, or they may have the wrong mental model.
 
 ### Full Path
 
-When the requirement involves new capabilities, crosses feature boundaries, or the scope is unclear:
+When the requirement involves new capabilities, crosses feature boundaries, modifies existing features substantially, or the scope is unclear:
 
 1. Read context (existing features, codebase structure)
 2. Enter the user clarification loop
@@ -91,9 +123,52 @@ This is the core mechanism. The goal is to make your understanding **visible** s
 
 4. **Repeat** until both sides are aligned.
 
-### UI Wireframing
+## UI Requirements
 
-When a user describes UI-related requirements (screens, layouts, components, pages), draw a simple ASCII wireframe to verify your understanding. Use box-drawing characters (`+`, `-`, `|`) and brackets for interactive elements (`[Button]`). Keep it minimal — one screen per diagram, focus on layout structure only.
+**MANDATORY for ANY UI-related requirement**: Screens, layouts, components, pages, or visual changes.
+
+When you encounter UI requirements, you MUST:
+
+1. **Draw a wireframe FIRST** — before clarifying anything else
+2. **Show it to the user** — get visual alignment before proceeding
+3. **Iterate on the wireframe** — until user confirms the layout is correct
+
+### Wireframe Format
+
+Use ASCII box-drawing characters. Keep it minimal — one screen per diagram.
+
+```
++----------------------------------+
+|  Header: App Title        [≡]   |
++----------------------------------+
+|                                  |
+|   +------------------------+     |
+|   |                        |     |
+|   |    Main Content Area   |     |
+|   |                        |     |
+|   +------------------------+     |
+|                                  |
+|   [Cancel]           [Submit]    |
+|                                  |
++----------------------------------+
+```
+
+- Use `+`, `-`, `|` for boxes
+- Use `[Button]` or `[Input]` for interactive elements
+- Focus on **layout structure**, not styling
+- Interactive elements in `[brackets]`
+- Navigation in `---` dividers
+
+### When to Draw Wireframes
+
+| User says... | Draw wireframe? |
+|--------------|----------------|
+| "add a settings page" | YES |
+| "change the button color to blue" | YES (show the button in context) |
+| "add a chart to the dashboard" | YES |
+| "make the form taller" | YES |
+| "fix the alignment" | YES (show the area before/after) |
+| "add validation to the input" | YES (show the input with error state) |
 
 ### Good questions vs Bad questions
 
@@ -202,10 +277,20 @@ Skeleton check: CLAUDE.md exists?
         ↓
 Read context (features/, codebase structure)
         ↓
-Simple? → Fast path: invoke harness-pro-test-driven-development → harness-pro-complete-work (no asking)
-Complex? → Full path below
+┌─ Is this covered by an existing feature?
+│
+├─ NO → New feature → Full Path (clarification loop → feature → plan)
+│
+└─ YES → Is it a PURE VISUAL TWEAK only?
+         (color, proportions, border radius, font size, spacing)
+         │
+         ├─ YES → Fast Path: invoke harness-pro-test-driven-development → complete-work
+         │
+         └─ NO → Full Path: update feature → clarification loop → plan
         ↓
-Clarification loop:
+For UI requirements: draw wireframe FIRST, get user confirmation
+        ↓
+Full Path: Clarification loop
   AI infers → exposes understanding → user confirms/corrects → repeat
         ↓
 Define atomic features with spec (scope + technical direction + acceptance criteria)
