@@ -1,0 +1,24 @@
+{
+  "iteration_name": "iter_20260418_191554_1",
+  "timestamp": "2026-04-18T19:16:50.480014",
+  "context_score": 100,
+  "skill_path_score": 25,
+  "verification_score": 100,
+  "overall_score": 73,
+  "verdict": "fail",
+  "tool_calls_count": 3,
+  "tokens_total": 195997,
+  "turns_count": 5,
+  "context_decay_score": 1.0012135922330097,
+  "claude_md_read": true,
+  "milestone_review_executed": false,
+  "lint_executed": true,
+  "p0_passed": true,
+  "findings": [
+    "\u672a\u6267\u884c milestone review"
+  ],
+  "critical_findings": [
+    "\u7f3a\u5931\u6b65\u9aa4: execute (\u4efb\u52a1\u6267\u884c)",
+    "\u7f3a\u5931\u6b65\u9aa4: complete (\u5b8c\u6210\u5de5\u4f5c)"
+  ]
+}

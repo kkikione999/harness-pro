@@ -1,0 +1,76 @@
+The user wants me to implement an Order Management System with two independent services. Let me first invoke the harness-pro-decompose-requirement skill since this is a new implementation task that requires planning.
+
+Actually, looking at the CLAUDE.md, it says:
+1. 不要把你的猜测当作事实。
+2. 只修改必须改动的部分，只清理自己造成的问题。
+
+And the workflow says:
+- [harness-pro-decompose-requirement] ← 唯一入口，简单修改走 fast path
+
+This is a new implementation task, so I should use the decompose-requirement skill first to understand what needs to be done.
+
+Wait, looking at the system prompt, I should use the Skill tool to invoke harness-pro-decompose-requirement since this is a new feature implementation.
+Let me start by checking the CLAUDE.md exists and reading the context. This is a new project - an Order Management System with two services. Let me check if CLAUDE.md exists and understand the current project state.
+
+The skill says to:
+1. Check if CLAUDE.md exists
+2. Read context (existing features, codebase structure)
+3. Decide Fast or Full Path
+4. For Full Path: enter user clarification loop
+
+This is clearly a NEW system - Order Management System with two services (Order Service and Inventory Service). There are no existing features in `docs/features/` that would cover this. So this is Full Path - New feature.
+
+Let me first check the project structure to understand what exists.
+The project has a harness infrastructure already set up (`.harness/` directory) and skills in `.claude/skills/`. But there are no existing features in `docs/features/`. This is a completely new project that I need to create from scratch.
+
+Now let me understand the requirement:
+- Order Service (port 8081) with SQLite (orders.db)
+- Inventory Service (port 8082) with SQLite (inventory.db)
+- HTTP communication between services
+- Order CRUD + State machine (pending, paid, cancelled, completed)
+- Inventory management (reserve, confirm, release)
+- Prevent overselling
+
+This is clearly a Full Path - new feature. I need to:
+1. Understand what user wants
+2. Clarify boundaries
+3. Define atomic features
+4. Create feature definitions
+
+Let me think about the atomic features:
+
+1. **Inventory Service** - Core service for inventory management
+   - Create products
+   - Initialize stock
+   - Query stock
+   - Reserve stock
+   - Confirm stock deduction
+   - Release reserved stock
+
+2. **Order Service** - Core service for order management
+   - Create order (calls Inventory to reserve)
+   - Get order
+   - Pay order (calls Inventory to confirm)
+   - Cancel order (calls Inventory to release)
+
+Since these two services are independent but related, I should think about how to split this:
+
+**Option A**: One feature per service
+- order-service feature
+- inventory-service feature
+
+**Option B**: More granular features
+- inventory-management (all inventory operations)
+- order-management (all order operations)
+
+Given the requirement says these are TWO INDEPENDENT services that communicate via HTTP, the natural boundary is:
+1. **inventory-service** - manages inventory
+2. **order-service** - manages orders, depends on inventory-service
+
+The dependencies are:
+- order-service depends on inventory-service (to reserve/confirm/release inventory)
+
+
+- inventory-service is standalone
+
+Now I'll present my understanding and enter the clarification loop.

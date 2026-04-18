@@ -1,0 +1,21 @@
+{
+  "tool_calls": [
+    {
+      "tool": "Bash",
+      "count": 9
+    },
+    {
+      "tool": "Read",
+      "count": 7
+    },
+    {
+      "tool": "Glob",
+      "count": 6
+    },
+    {
+      "tool": "Skill",
+      "count": 1
+    }
+  ],
+  "total": 23
+}

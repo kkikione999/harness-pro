@@ -203,6 +203,26 @@ Before implementing each change:
 - If a simpler approach exists, say so. Push back when warranted.
 - If something in the plan doesn't match reality, stop. Name what's confusing. Report back.
 
+### 1.5. Pre-validate Structural Changes
+
+Before creating a file or adding a cross-package import, ask: "is this action legal?"
+
+Run the pre-validation check:
+```bash
+bash .claude/skills/harness-pro-execute-task/scripts/p0-checks.sh --pre-check
+```
+This runs **only** architecture boundary checks (P0-005), not the full suite. Fast and cheap.
+
+**When pre-validation is needed:**
+- Creating a file in a new directory → YES, validate first
+- Adding an import from a different package/layer → YES, validate first
+- Modifying a function body → NO, just code
+- Adding a test file → NO, just code
+
+**If pre-validation fails:** fix the plan before writing any code. Architecture violations are the #1 cause of agent failure loops — catching them before writing code saves 3+ retry cycles.
+
+**Note:** Pre-validation only works if the project has `.harness/golden-principles/layers.conf` defined. If not present, P0-005 auto-skips.
+
 ### 2. Simplicity First
 
 Minimum code that solves the problem. Nothing speculative.

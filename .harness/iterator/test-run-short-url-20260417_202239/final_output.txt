@@ -1,0 +1,20 @@
+短链接服务已实现完成，**所有验收标准均已满足**：
+
+| 验收标准 | 状态 |
+|---------|------|
+| 同一URL每次调用生成不同的短码（7字符a-z0-9）| ✓ 通过 `test_shorten_generates_unique_codes` 和 `test_short_code_format` |
+| 跳转后原URL点击数+1 | ✓ 通过 `test_redirect_and_increment_clicks` |
+| 访问不存在的短码返回404 | ✓ 通过 `test_redirect_nonexistent_code` |
+| 服务可正常启动 | ✓ 验证通过 |
+
+**服务已就绪**，位于 `/shorturl/` 目录：
+
+```bash
+# 启动服务
+cd shorturl && python3 app.py
+
+# API 端点
+POST /shorten      # {url: "https://..."} → {short_code: "abc123d"}
+GET /{short_code}   # 302 重定向到原URL
+GET /stats/{short_code}  # → {url: "...", clicks: 42}
+```

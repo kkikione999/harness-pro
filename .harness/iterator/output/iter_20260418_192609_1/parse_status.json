@@ -1,0 +1,12 @@
+{
+  "input_file": "/Users/josh_folder/harness-pro-for-vibe/harness-blogs/.harness/iterator/output/iter_20260418_192609_1/stream_raw.jsonl",
+  "input_size": 187843,
+  "lines_processed": 73,
+  "lines_valid": 72,
+  "lines_truncated": 0,
+  "lines_error": 1,
+  "result_found": true,
+  "error": null,
+  "tool_calls_extracted": 23,
+  "thinking_chunks_extracted": 16
+}

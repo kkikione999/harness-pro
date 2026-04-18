@@ -1,0 +1,48 @@
+This is a **new project** with no existing features. The Order Management System consists of two independent services that communicate via HTTP. Let me present my understanding and clarify boundaries.
+
+## My Understanding
+
+The system has two services:
+- **Order Service** (8081) — handles order CRUD + state machine, calls Inventory Service
+- **Inventory Service** (8082) — handles stock management (reserve/confirm/release)
+
+**Proposed atomic features:**
+
+| Feature | Responsibility | Boundaries |
+|---------|----------------|------------|
+| `inventory-service` | Stock management | Create products, init stock, reserve/confirm/release |
+| `order-service` | Order management | Create/pay/cancel/query orders; calls inventory-service |
+
+**DAG:**
+```
+[inventory-service] ← independent, runs first
+         ↓
+[order-service] ← depends on inventory-service
+```
+
+**Out of scope:**
+- No authentication/authorization
+- No user management
+- No payment gateway integration
+- No retry/long-running transaction handling (beyond basic HTTP calls)
+- No distributed tracing within the system
+
+## Questions for Clarification
+
+1. **Language/Framework**: You didn't specify the technology stack. Python (FastAPI/Flask) is common for such services. What language do you prefer?
+
+2. **Database initialization**: Should the services auto-create their SQLite databases and tables on startup, or should I provide migration scripts?
+
+3. **Error handling consistency**: If Inventory Service is unavailable during order creation:
+   - (a) Return error immediately to client
+   - (b) Return error after timeout (how long?)
+   - (c) Order stays in a "pending" state until inventory becomes available
+
+4. **Stock confirmation timing**: When paying an order, if the inventory confirm fails (e.g., network issue), should the order:
+   - (a) Stay "paid" with failed inventory confirm (inconsistent state)
+   - (b) Revert to "pending" and retry
+   - (c) Mark as "failed" and require manual intervention
+
+5. **Product/Inventory creation**: Can products be created on-the-fly when creating an order, or must they exist beforehand in Inventory Service?
+
+Please confirm or correct my understanding, and let me know your preferences on the questions above.

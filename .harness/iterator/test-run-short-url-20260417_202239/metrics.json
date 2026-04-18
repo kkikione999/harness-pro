@@ -1,0 +1,27 @@
+{
+  "duration_ms": 48752,
+  "duration_api_ms": 47936,
+  "total_cost_usd": 0.7919982499999999,
+  "usage": {
+    "input_tokens": 96058,
+    "cache_creation_input_tokens": 9185,
+    "cache_read_input_tokens": 424704,
+    "output_tokens": 1678,
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "inference_geo": "",
+    "iterations": [],
+    "speed": "standard"
+  },
+  "stop_reason": "end_turn",
+  "terminal_reason": "completed",
+  "num_turns": 9,
+  "tokens_total": 531625
+}

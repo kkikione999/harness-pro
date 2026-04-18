@@ -1,0 +1,13 @@
+{
+  "tool_calls": [
+    {
+      "tool": "Bash",
+      "count": 6
+    },
+    {
+      "tool": "Read",
+      "count": 2
+    }
+  ],
+  "total": 8
+}

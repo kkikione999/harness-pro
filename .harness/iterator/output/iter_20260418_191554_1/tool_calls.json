@@ -1,0 +1,13 @@
+{
+  "tool_calls": [
+    {
+      "tool": "Glob",
+      "count": 2
+    },
+    {
+      "tool": "Skill",
+      "count": 1
+    }
+  ],
+  "total": 3
+}

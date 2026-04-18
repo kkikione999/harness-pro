@@ -1,0 +1,53 @@
+**订单管理系统已完整实现并通过全部测试。**
+
+## 测试结果
+
+| 测试套件 | 数量 | 状态 |
+|---------|------|------|
+| Inventory Service 单元测试 | 14 | ✅ 全部通过 |
+| Order Service 单元测试 | 11 | ✅ 全部通过 |
+| 集成测试 | 11 | ✅ 全部通过 |
+
+## 项目结构
+
+```
+order-management-system/
+├── order_service/          # 端口 8081
+│   ├── main.py            # FastAPI 应用
+│   ├── models.py          # Pydantic 模型
+│   ├── database.py        # SQLite (orders.db)
+│   ├── services.py        # 订单业务逻辑
+│   └── inventory_client.py # HTTP 调用 Inventory Service
+├── inventory_service/      # 端口 8082
+│   ├── main.py            # FastAPI 应用
+│   ├── models.py          # Pydantic 模型
+│   ├── database.py        # SQLite (inventory.db)
+│   └── services.py        # 库存业务逻辑
+├── tests/                 # 完整测试套件
+├── data/                  # 数据库文件
+└── README.md              # 完整文档
+```
+
+## 启动方式
+
+**终端 1 - Inventory Service:**
+```bash
+cd order-management-system/inventory_service
+python3 -m uvicorn main:app --host 0.0.0.0 --port 8082
+```
+
+**终端 2 - Order Service:**
+```bash
+cd order-management-system/order_service
+python3 -m uvicorn main:app --host 0.0.0.0 --port 8081
+```
+
+## 验收标准覆盖
+
+1. ✅ 创建订单后状态 pending，Inventory 预占成功
+2. ✅ 支付订单后状态 paid，Inventory 确认扣减
+3. ✅ 取消订单后状态 cancelled，Inventory 释放预占
+4. ✅ 库存不足时返回错误（跨服务调用）
+5. ✅ 防止超卖（reserve 原子操作）
+6. ✅ 服务独立运行（独立 SQLite）
+7. ✅ 不存在的订单返回 404
