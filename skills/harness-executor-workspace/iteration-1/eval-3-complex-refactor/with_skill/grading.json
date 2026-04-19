@@ -1,0 +1,51 @@
+{
+  "eval_id": 3,
+  "configuration": "with_skill",
+  "expectations": [
+    {
+      "text": "classifies_as_complex",
+      "passed": true,
+      "evidence": "## 1. Complexity Classification: COMPLEX ... The task is classified as Complex based on three criteria ... Architecture changes required ... New modules/artifacts introduced"
+    },
+    {
+      "text": "creates_detailed_plan",
+      "passed": true,
+      "evidence": "The following plan would be written to `docs/exec-plans/break-circular-dep-user-auth.md` ... Includes: Objective, Impact Scope, 6 ordered Steps, Validation checklist, Rollback Plan, Checkpoint schedule"
+    },
+    {
+      "text": "uses_worktree",
+      "passed": true,
+      "evidence": "## 5. Worktree Isolation ... Yes, worktree isolation is used. Complex tasks mandate worktree isolation per the skill definition. ... Create a worktree with branch `refactor/break-circular-dep-user-auth`"
+    },
+    {
+      "text": "delegates_with_opus",
+      "passed": true,
+      "evidence": "## 4. Model Selection for Sub-Agent ... Model: opus ... This task is explicitly 'structural refactoring that touches architecture'"
+    },
+    {
+      "text": "pre_validates_imports",
+      "passed": true,
+      "evidence": "## 6. Pre-Validation Before Adding Imports ... Before creating the new protocol file ... run: ./scripts/lint-deps ... This is the pre-validation rule from Step 6"
+    },
+    {
+      "text": "full_pipeline_validation",
+      "passed": true,
+      "evidence": "## 7. Validation Pipeline Steps ... swift build ... ./scripts/lint-deps ... ./scripts/lint-quality ... swift test ... python3 scripts/verify/run.py ... All 5 steps run"
+    },
+    {
+      "text": "cross_review_with_different_model",
+      "passed": true,
+      "evidence": "Review model: sonnet (different from the coding model, which was opus) ... The cross-review delegation ... model=\"sonnet\" ... Different from coding model (opus)"
+    },
+    {
+      "text": "saves_checkpoints",
+      "passed": true,
+      "evidence": "## 9. Checkpoints ... All five checkpoints are saved ... phase-1-context-loaded, phase-2-plan-approved, phase-3-execution-complete, phase-4-validated, phase-5-reviewed"
+    },
+    {
+      "text": "trajectory_check",
+      "passed": true,
+      "evidence": "## 10. Trajectory Compilation ... Trajectory compilation only triggers when ALL three conditions are met ... For this task ... Success count is 0 ... A new procedural memory entry is created"
+    }
+  ]
+}

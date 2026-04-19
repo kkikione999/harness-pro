@@ -1,0 +1,3 @@
+# This directory stores failure records for the Critic loop.
+# Each failure record documents what went wrong and how it was fixed.
+# Used by the Critic agent to identify recurring issues.

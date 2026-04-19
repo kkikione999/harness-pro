@@ -1,0 +1,109 @@
+#!/bin/bash
+# Lint code quality rules for MarkdownPreview
+
+set -euo pipefail
+
+# Allow override via environment variable for testing
+if [ -n "${MARKDOWN_PREVIEW_ROOT:-}" ]; then
+    ROOT_DIR="$MARKDOWN_PREVIEW_ROOT"
+else
+    ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+fi
+SOURCE_DIR="${ROOT_DIR}/Sources"
+MAX_LINES=500
+VIOLATIONS=0
+
+# Check for print() statements (should use os.Logger)
+check_print_statements() {
+    local file="$1"
+
+    # Skip test files and third-party dependencies
+    case "$file" in
+        *Tests/*|*Tests/MarkdownPreviewTests*|*.build/*)
+            return
+            ;;
+    esac
+
+    # Check for print() calls
+    if grep -qE '^\s*print\(' "$file" 2>/dev/null; then
+        echo "VIOLATION: $file contains print() statement."
+        echo "Use os.Logger for structured logging instead."
+        echo ""
+        ((VIOLATIONS++))
+    fi
+}
+
+# Check for hardcoded strings (not counting tests)
+check_hardcoded_strings() {
+    local file="$1"
+
+    # Skip test files
+    case "$file" in
+        *Tests/*)
+            return
+            ;;
+    esac
+
+    # Allow strings that are part of UI or user-facing content
+    # This is a basic check - extend as needed
+    :
+}
+
+# Check file line count
+check_file_length() {
+    local file="$1"
+    local lines=$(wc -l < "$file")
+
+    if [ "$lines" -gt "$MAX_LINES" ]; then
+        echo "VIOLATION: $file has $lines lines (max: $MAX_LINES)"
+        echo ""
+        ((VIOLATIONS++))
+    fi
+}
+
+# Check for TODO markers (should have descriptions)
+check_todo_format() {
+    local file="$1"
+
+    # Allow TODOs in test files
+    case "$file" in
+        *Tests/*)
+            return
+            ;;
+    esac
+
+    if grep -qE '^\s*//\s*TODO' "$file" 2>/dev/null; then
+        # TODOs should have descriptions after them
+        if grep -E '^\s*//\s*TODO\s*$' "$file" 2>/dev/null; then
+            echo "VIOLATION: $file has a TODO without a description"
+            echo ""
+            ((VIOLATIONS++))
+        fi
+    fi
+}
+
+echo "Checking code quality..."
+echo ""
+
+# Check all Swift source files
+if [ -d "$SOURCE_DIR" ]; then
+    for file in $(find "$SOURCE_DIR" -name "*.swift" -type f 2>/dev/null); do
+        # Skip .build directory
+        case "$file" in
+            *.build/*)
+                continue
+                ;;
+        esac
+        check_file_length "$file"
+        check_print_statements "$file"
+        check_todo_format "$file"
+    done
+fi
+
+if [ $VIOLATIONS -eq 0 ]; then
+    echo "No quality violations found."
+    exit 0
+else
+    echo "Found $VIOLATIONS quality violation(s)."
+    exit 1
+fi

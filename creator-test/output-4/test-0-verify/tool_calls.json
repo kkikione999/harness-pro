@@ -1,0 +1,9 @@
+{
+  "tool_calls": [
+    {
+      "tool": "Bash",
+      "count": 1
+    }
+  ],
+  "total": 1
+}

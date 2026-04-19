@@ -1,0 +1,7 @@
+The user wants to use the harness-executor skill to add a comment line to the top of the AppDelegate.swift file. Let me invoke the skill first.
+The user wants to add a comment to the top of AppDelegate.swift. This is a simple task - a one-liner, single file change. According to the skill instructions, simple tasks can be executed directly.
+
+Let me first check if the file exists and then add a comment to it.
+Found the file at `Sources/MarkdownPreview/AppDelegate.swift`. Let me read it first before making changes.
+Now I'll add a comment to the top of the file. Since the file starts with `import AppKit`, I'll add a comment before that.
+Done. This is a simple task, so no validation pipeline needed. Let me summarize the result.

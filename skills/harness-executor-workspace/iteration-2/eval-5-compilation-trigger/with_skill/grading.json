@@ -1,0 +1,14 @@
+{
+  "eval_id": 5,
+  "eval_name": "compilation-trigger",
+  "configuration": "with_skill",
+  "expectations": [
+    {"text": "Loads add-database-model.md during Step 2 and follows its steps", "passed": true, "evidence": "Executor loads full procedure from harness/memory/procedural/add-database-model.md and uses 4-step procedure as blueprint"},
+    {"text": "Detects the ← READY TO COMPILE flag in INDEX.md", "passed": true, "evidence": "Output: '← READY TO COMPILE marker signals that this procedure has already hit the compilation threshold'"},
+    {"text": "Prompts user: pattern succeeded Nx, compile to script?", "passed": true, "evidence": "Prompt user: Pattern 'add-database-model' succeeded 4x with consistent steps. Compile to deterministic script?"},
+    {"text": "Generates scripts/add-database-model.sh with correct bash skeleton", "passed": true, "evidence": "Full bash script generated with set -e, argument parsing, 4 steps, and proper error handling"},
+    {"text": "Generated script includes ./scripts/validate.py at the end", "passed": true, "evidence": "Script checks for scripts/validate.py and runs python3 scripts/validate.py at end"},
+    {"text": "Updates INDEX.md to mark as compiled → scripts/add-database-model.sh", "passed": true, "evidence": "INDEX.md updated from '← READY TO COMPILE' to 'compiled → scripts/add-database-model.sh'"},
+    {"text": "Updates procedural memory to mark compiled status", "passed": true, "evidence": "New ## Compiled section added to procedural memory documenting script location and fallback behavior"}
+  ]
+}

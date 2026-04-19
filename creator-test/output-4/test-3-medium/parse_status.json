@@ -1,0 +1,12 @@
+{
+  "input_file": "/Users/josh_folder/harness-simple/creator-test/output-4/test-3-medium/stream_raw.jsonl",
+  "input_size": 152709,
+  "lines_processed": 66,
+  "lines_valid": 65,
+  "lines_truncated": 0,
+  "lines_error": 1,
+  "result_found": true,
+  "error": null,
+  "tool_calls_extracted": 20,
+  "thinking_chunks_extracted": 12
+}

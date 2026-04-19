@@ -1,0 +1,13 @@
+{
+  "eval_id": 7,
+  "eval_name": "episodic-discovery",
+  "prompt": "You are the harness-executor. The project has AGENTS.md and full Harness infrastructure. The task is: 'Fix the integration test that passes locally but fails on CI'. This is a MEDIUM complexity task.\n\nDuring execution, the sub-agent discovers that:\n1. The test compares file paths using exact string match\n2. On macOS, /var is a symlink to /private/var\n3. CI runs on Linux where /var is a real directory\n4. This causes path comparison to fail on CI but not locally\n\nThe fix is straightforward (use Path.resolve() instead of string comparison), and the task completes successfully with all validations passing.\n\nDescribe in EXACT detail:\n1. What EPISODIC memory gets written? Show the EXACT markdown content.\n2. Does this also warrant updating any other documentation?\n3. Show the updated INDEX.md content after this task.\n4. What procedural memory (if any) is written?",
+  "assertions": [
+    {"name": "writes_episodic", "description": "Writes episodic memory file to harness/memory/episodic/"},
+    {"name": "episodic_format_correct", "description": "Episodic memory follows spec format: Episode title, Context, Lesson, Impact"},
+    {"name": "lesson_is_non_obvious", "description": "The lesson captures the non-obvious /var symlink behavior"},
+    {"name": "impact_describes_future", "description": "Impact section describes how this changes future behavior (use Path.resolve)"),
+    {"name": "updates_index_episodic", "description": "Updates INDEX.md with new episodic entry in the Episodic section"},
+    {"name": "suggests_doc_update", "description": "Suggests adding this to docs/DEVELOPMENT.md as a known gotcha"}
+  ]
+}

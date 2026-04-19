@@ -1,0 +1,12 @@
+{
+  "eval_id": 1,
+  "eval_name": "simple-typo-fix",
+  "prompt": "Fix the typo in docs/ARCHITECTURE.md where ' Layer 3' should be 'Layer 3' (extra space before 'Layer 3' on line 15). Just fix the typo, nothing else.",
+  "assertions": [
+    {"name": "classifies_as_simple", "description": "Correctly identifies task as Simple complexity"},
+    {"name": "no_execution_plan", "description": "Does NOT create an execution plan file (not needed for simple tasks)"},
+    {"name": "direct_execution", "description": "Executes directly without delegating to sub-agent"},
+    {"name": "lightweight_validation", "description": "Runs only build → test (not full pipeline)"},
+    {"name": "no_cross_review", "description": "Skips cross-review (simple task)"}
+  ]
+}

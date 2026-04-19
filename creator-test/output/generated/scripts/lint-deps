@@ -1,0 +1,148 @@
+#!/bin/bash
+# Lint architecture: check layer dependencies
+# This script enforces the layer rules for the MarkdownPreview project.
+
+set -euo pipefail
+
+# Layer mapping (inferred from import analysis)
+# Format: "filename:layer"
+LAYERS="
+MarkdownFileType:0
+MarkdownRenderMode:0
+LinkHandling:1
+MarkdownInteractions:3
+AppState:4
+AppWindowManager:4
+ContentView:4
+MarkdownPreviewView:4
+ReadOnlyTextView:4
+AppDelegate:4
+MarkdownPreviewApp:4
+"
+
+# Source directory
+# Allow override via environment variable for testing
+if [ -n "${MARKDOWN_PREVIEW_ROOT:-}" ]; then
+    ROOT_DIR="$MARKDOWN_PREVIEW_ROOT"
+else
+    # When scripts are in project root: scripts/ -> project root
+    # When scripts are in output: output/scripts/ -> output/ -> project (parent)
+    SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+    SCRIPT_BASENAME="$(basename "$SCRIPT_DIR")"
+    if [ "$SCRIPT_BASENAME" = "scripts" ]; then
+        # Scripts are at project root level
+        ROOT_DIR="$(dirname "$SCRIPT_DIR")"
+    else
+        # Scripts are in a subdirectory, go up two levels
+        ROOT_DIR="$(cd "$(dirname "$SCRIPT_DIR")/.." && pwd)"
+    fi
+fi
+SOURCE_DIR="${ROOT_DIR}/Sources/MarkdownPreview"
+
+VIOLATIONS=0
+
+# Get layer for a given filename
+get_layer() {
+    local filename="$1"
+    local line
+    while IFS= read -r line; do
+        if [[ "$line" =~ ^${filename}: ]]; then
+            echo "${line#*:}"
+            return 0
+        fi
+    done <<< "$LAYERS"
+    echo "4"  # Default to L4 if not found
+    return 0
+}
+
+# Educational error messages
+explain_layer_rule() {
+    local source="$1"
+    local target="$2"
+    local source_layer="$3"
+    local target_layer="$4"
+
+    echo "VIOLATION: ${source}.swift (Layer ${source_layer}) imports ${target}.swift (Layer ${target_layer})."
+    echo ""
+    echo "Layer ${source_layer} packages must NOT import Layer ${target_layer}."
+    if [ "$target_layer" -gt "$source_layer" ]; then
+        echo "Lower layers cannot depend on higher layers (business logic cannot depend on UI)."
+    fi
+    echo ""
+    echo "Fix: Move the dependency to a lower layer, or pass the needed value as a parameter."
+    echo ""
+}
+
+# Check a single file for layer violations
+check_file() {
+    local file="$1"
+    local filename=$(basename "$file" .swift)
+    local source_layer
+    source_layer=$(get_layer "$filename")
+
+    # Get all imports from this file
+    local imports
+    imports=$(grep -h "^import " "$file" 2>/dev/null || true)
+
+    # Check each import
+    while IFS= read -r import_line; do
+        # Skip empty lines
+        [[ -z "$import_line" ]] && continue
+
+        # Extract module name
+        local imported_module
+        imported_module=$(echo "$import_line" | awk '{print $2}')
+
+        # Skip external packages (MarkdownUI, etc.)
+        case "$imported_module" in
+            Foundation|AppKit|SwiftUI|Combine|MarkdownUI|UniformTypeIdentifiers)
+                continue
+                ;;
+        esac
+
+        # Check if it's an internal module we track
+        local target_layer
+        target_layer=$(get_layer "$imported_module")
+
+        # Only check if we found a layer (not default)
+        if [[ "$target_layer" != "4" ]] || [[ "$imported_module" == "MarkdownFileType" ]] || [[ "$imported_module" == "MarkdownRenderMode" ]] || [[ "$imported_module" == "LinkHandling" ]] || [[ "$imported_module" == "MarkdownInteractions" ]]; then
+            # L0 must not import anything internal
+            if [ "$source_layer" -eq 0 ]; then
+                echo "ERROR: ${filename}.swift (Layer 0) should have NO internal imports."
+                echo "Found: $imported_module"
+                echo ""
+                explain_layer_rule "$filename" "$imported_module" 0 "$target_layer"
+                ((VIOLATIONS++))
+            fi
+
+            # Lower layer importing higher layer is a violation
+            if [ "$source_layer" -lt "$target_layer" ]; then
+                explain_layer_rule "$filename" "$imported_module" "$source_layer" "$target_layer"
+                ((VIOLATIONS++))
+            fi
+        fi
+    done <<< "$imports"
+}
+
+# Main: check all Swift files
+echo "Checking layer dependencies..."
+echo ""
+
+if [ ! -d "$SOURCE_DIR" ]; then
+    echo "Warning: Source directory $SOURCE_DIR not found"
+    exit 0
+fi
+
+for file in "$SOURCE_DIR"/*.swift; do
+    if [ -f "$file" ]; then
+        check_file "$file"
+    fi
+done
+
+if [ $VIOLATIONS -eq 0 ]; then
+    echo "No layer violations found."
+    exit 0
+else
+    echo "Found $VIOLATIONS layer violation(s)."
+    exit 1
+fi

@@ -1,0 +1,15 @@
+{
+  "eval_id": 8,
+  "eval_name": "lookup-before-exec",
+  "prompt": "You are the harness-executor. The project has AGENTS.md and full Harness infrastructure. The task is: 'Add a new API endpoint POST /users that creates a user'. This is a MEDIUM complexity task.\n\nThe harness/memory/INDEX.md currently contains:\n```\n# Memory Index\n## Procedural (Successful Patterns)\n- [add-api-endpoint](procedural/add-api-endpoint.md) — 5-step flow, 5/6 success, last: 2026-04-18\n\n## Episodic (Lessons)\n- [api-error-format](episodic/api-error-format.md) — Always wrap errors in {\"error\": {\"code\": ..., \"message\": ...}} format, don't use bare strings\n\n## Recent Failures (Last 7 days)\n- [user-model-import](../trace/failures/2026-04-17-user-import.json) — UserService imported from handlers (L4→L3 skip), 2 occurrences
+```\n\nDescribe in EXACT detail:\n1. What memory lookups happen during Step 2?\n2. How does the found procedural memory (add-api-endpoint) affect execution?\n3. How does the episodic memory (api-error-format) affect the code written?\n4. How does the recent failure (user-model-import) affect the execution?\n5. Does the executor follow the 5-step procedure from add-api-endpoint.md? Show which steps.",
+  "assertions": [
+    {"name": "reads_index_first", "description": "Reads INDEX.md as first step of memory lookup"},
+    {"name": "loads_procedural", "description": "Loads add-api-endpoint.md since task matches the pattern"},
+    {"name": "loads_episodic", "description": "Loads api-error-format.md since task involves API endpoint"},
+    {"name": "checks_failures", "description": "Checks user-model-import failure since task involves user-related code"},
+    {"name": "follows_procedure_steps", "description": "Follows the 5-step flow from add-api-endpoint.md"},
+    {"name": "applies_episodic_lesson", "description": "Ensures error responses use the wrapped format from episodic memory"},
+    {"name": "avoids_known_failure", "description": "Avoids the L4→L3 import pattern that caused the user-model-import failure"}
+  ]
+}

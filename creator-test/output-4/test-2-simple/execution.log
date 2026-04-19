@@ -1,0 +1,25 @@
+==============================================
+Harness Executor 测试日志
+==============================================
+测试名称: test-2-simple
+时间: 2026-04-19T17:03:25+08:00
+项目路径: /Users/josh_folder/harness-simple/creator-test/markdown-tool-bare
+Skill 路径: /Users/josh_folder/harness-simple/skills/harness-executor
+输出目录: /Users/josh_folder/harness-simple/creator-test/output-4/test-2-simple
+==============================================
+START_TIME=1776589405
+STATUS=STARTING
+
+>>> 开始执行 Claude Code (启用 harness-executor)...
+>>> Claude 进程 PID: 47786
+CLAUDE_EXIT_CODE=0
+>>> Claude 进程退出，代码: 0
+>>> stream 大小:    30267 bytes
+STATUS=EXECUTED
+STREAM_SIZE=   30267
+STATUS=PARSING
+✓ 解析完成（完整）: 18 行有效
+STATUS=CHECKING_ERRORS
+STATUS=FINISHED
+END_TIME=1776589438
+FINAL_EXIT_CODE=0

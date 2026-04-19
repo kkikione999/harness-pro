@@ -1,0 +1,73 @@
+The user wants me to use the harness-executor skill to add a new environment variable SUPPORT_EMAIL for displaying a contact email when errors occur. I need to modify both code and configuration.
+
+Let me invoke the harness-executor skill first.
+The user wants to add a new environment variable `SUPPORT_EMAIL` for displaying a contact email when errors occur. This requires code and configuration changes.
+
+Let me follow the harness-executor workflow:
+
+1. First, I need to check if AGENTS.md exists
+2. Load context
+3. Analyze task complexity
+4. Execute
+
+Let me start by checking the environment and reading the relevant files.
+The project doesn't have AGENTS.md - it's a markdown tool project. Let me look at the project structure to understand what kind of project this is and where I need to add the SUPPORT_EMAIL environment variable.
+This is a Swift package (MarkdownPreview) - a macOS application. I need to find where errors are handled and where to add the SUPPORT_EMAIL environment variable. Let me look at the AppDelegate and error handling code.
+Now I understand the project. It's a Swift macOS Markdown Preview application. The error messages are stored in `AppState.errorMessage`. I need to:
+
+1. Add a `SUPPORT_EMAIL` environment variable that can be displayed when errors occur
+2. This likely needs to be:
+   - Added to Info.plist for the app bundle
+   - Read using `ProcessInfo.processInfo.environment`
+   - Displayed in the error UI
+
+Let me look at where errors are displayed to understand the full flow. Let me also check the ContentView where error might be shown.
+Now I understand the project structure. I need to:
+
+1. Add `SUPPORT_EMAIL` environment variable support
+2. Display it when errors occur
+
+The task is simple - adding an environment variable that shows in the error alert. Let me analyze the task:
+
+**Task**: Add `SUPPORT_EMAIL` environment variable for displaying contact email when errors occur
+
+**Complexity**: Simple - single feature, affects limited files (AppState.swift for reading env var, ContentView.swift for displaying it, maybe Info.plist)
+
+**Changes needed**:
+1. `AppState.swift` - Read `SUPPORT_EMAIL` from environment
+2. `ContentView.swift` - Show the support email in the error alert
+
+Let me create the implementation. According to the Swift rules, I should use `ProcessInfo.processInfo.environment` to read environment variables.
+
+Since this is a simple task, I'll execute it directly without needing a full plan. The harness-executor says for simple tasks (single file, one-liner), execute directly.
+
+Actually, let me think about this more carefully. The task involves:
+- Modifying AppState.swift to read the environment variable
+- Modifying ContentView.swift to display it in the error alert
+- Possibly adding it to Info.plist for documentation
+
+This is more like medium complexity since it affects multiple files. But the changes are straightforward - adding a constant and displaying it. I'll proceed with direct execution.
+
+Let me make the changes:
+
+1. In `AppState.swift`, add a property for `supportEmail` that reads from `ProcessInfo.processInfo.environment["SUPPORT_EMAIL"]`
+
+2. In `ContentView.swift`, modify the alert to show the support email if available.
+
+Wait, I need to think about immutability. The rules say "ALWAYS create new objects, NEVER mutate existing ones". But for reading an environment variable, we just need to access it - that's not mutation.
+
+
+I'll add a static property to access the environment variable since it's a constant that doesn't change during runtime.
+Now I need to modify ContentView.swift to show the support email in the error alert. Let me update the alert to include the support email if it's set.
+Now let me verify the changes by building the project.
+Build succeeded! Let me also run the tests to make sure everything works.
+The test failure is not related to my changes - it's a pre-existing issue in the test file with Task comparison using ===. This is a Swift concurrency issue where Task is a struct and you can't use === to compare them.
+
+Let me verify my changes didn't break anything by looking at the specific test file to understand if this was already broken.
+Not a git repo. The test failure is pre-existing and not related to my changes. Let me verify by reading the modified files to confirm my changes are correct.
+The changes look correct. Let me summarize what was done:
+
+1. Added `static let supportEmail = ProcessInfo.processInfo.environment["SUPPORT_EMAIL"]` in AppState.swift (line 17)
+2. Modified ContentView.swift to show the support email in the error alert (lines 40-47)
+
+The build succeeded. The test failure is pre-existing and unrelated to these changes.

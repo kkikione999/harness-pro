@@ -1,0 +1,14 @@
+{
+  "eval_id": 4,
+  "eval_name": "first-time-procedural",
+  "configuration": "with_skill",
+  "expectations": [
+    {"text": "Reads INDEX.md during Step 2 to find relevant patterns", "passed": true, "evidence": "Output explicitly reads harness/memory/INDEX.md as first memory lookup in Step 2"},
+    {"text": "Loads add-api-endpoint.md since it's relevant to this task", "passed": true, "evidence": "Output loads matching procedural memory from harness/memory/procedural/add-api-endpoint.md"},
+    {"text": "Updates add-api-endpoint.md success rate from 2/2 to 3/3 (not creates new one)", "passed": true, "evidence": "Answer: Update the existing procedural memory. Success rate updated from 2/2 to 3/3"},
+    {"text": "Updates INDEX.md with new success rate for add-api-endpoint", "passed": true, "evidence": "INDEX.md entry shows '3/3 success, last: 2026-04-19' with READY TO COMPILE flag"},
+    {"text": "Since success count reaches 3, suggests trajectory compilation", "passed": true, "evidence": "Flagged as READY TO COMPILE, prompts user: Pattern 'add-api-endpoint' succeeded 3x. Compile to script?"},
+    {"text": "Written procedural memory follows the format spec (When to Use, Steps, Success Rate, Last Validated)", "passed": true, "evidence": "Procedural memory has all required sections: When to Use, Steps, Success Rate, Last Validated"},
+    {"text": "INDEX.md entry includes: link, step count, success rate, date, and READY TO COMPILE flag", "passed": true, "evidence": "INDEX.md shows: [add-api-endpoint](procedural/add-api-endpoint.md) — 5-step flow, 3/3 success, last: 2026-04-19 ← READY TO COMPILE"}
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "tool_calls": [
+    {
+      "tool": "Grep",
+      "count": 2
+    },
+    {
+      "tool": "Glob",
+      "count": 1
+    },
+    {
+      "tool": "Read",
+      "count": 1
+    }
+  ],
+  "total": 4
+}

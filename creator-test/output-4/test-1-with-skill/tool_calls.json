@@ -1,0 +1,21 @@
+{
+  "tool_calls": [
+    {
+      "tool": "Grep",
+      "count": 5
+    },
+    {
+      "tool": "Skill",
+      "count": 1
+    },
+    {
+      "tool": "Glob",
+      "count": 1
+    },
+    {
+      "tool": "Bash",
+      "count": 1
+    }
+  ],
+  "total": 8
+}

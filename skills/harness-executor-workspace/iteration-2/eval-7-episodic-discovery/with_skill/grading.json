@@ -1,0 +1,13 @@
+{
+  "eval_id": 7,
+  "eval_name": "episodic-discovery",
+  "configuration": "with_skill",
+  "expectations": [
+    {"text": "Writes episodic memory file to harness/memory/episodic/", "passed": true, "evidence": "File written to harness/memory/episodic/2026-04-19-macos-symlink-path-comparison.md"},
+    {"text": "Episodic memory follows spec format: Episode title, Context, Lesson, Impact", "passed": true, "evidence": "Has all required sections: Episode title, Context (full scenario), Lesson (symlink behavior), Impact (future behavior changes)"},
+    {"text": "The lesson captures the non-obvious /var symlink behavior", "passed": true, "evidence": "Lesson: macOS has symlinks /var -> /private/var, /tmp -> /private/tmp, /etc -> /private/etc. Always use Path.resolve() for comparison."},
+    {"text": "Impact section describes how this changes future behavior (use Path.resolve)", "passed": true, "evidence": "Impact: When writing/reviewing tests with file paths, use Path.resolve(); check platform-specific behavior; candidate for lint-quality rule"},
+    {"text": "Updates INDEX.md with new episodic entry in the Episodic section", "passed": true, "evidence": "INDEX.md updated with new entry: [macos-symlink-path-comparison] in Episodic section"},
+    {"text": "Suggests adding this to docs/DEVELOPMENT.md as a known gotcha", "passed": true, "evidence": "docs/DEVELOPMENT.md update suggested with Cross-Platform Testing Notes section + lint-quality candidate for Critic-Refiner loop"}
+  ]
+}

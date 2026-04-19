@@ -1,0 +1,14 @@
+{
+  "eval_id": 2,
+  "eval_name": "medium-cli-command",
+  "prompt": "Add a new CLI command 'harness validate' to the project. This command should call scripts/validate.py and return its exit code. The command should be registered in the main CLI entry point. This affects multiple files (new command file + CLI registration + potential config changes).",
+  "assertions": [
+    {"name": "classifies_as_medium", "description": "Correctly identifies task as Medium complexity"},
+    {"name": "creates_execution_plan", "description": "Creates execution plan at docs/exec-plans/"},
+    {"name": "seeks_human_approval", "description": "Waits for human approval before executing"},
+    {"name": "delegates_to_subagent", "description": "Delegates execution to sub-agent (not direct execution)"},
+    {"name": "runs_full_validation", "description": "Runs full validation pipeline (build → lint → test → verify)"},
+    {"name": "performs_cross_review", "description": "Performs cross-review with different model"},
+    {"name": "git_commit", "description": "Commits changes with proper message format"}
+  ]
+}

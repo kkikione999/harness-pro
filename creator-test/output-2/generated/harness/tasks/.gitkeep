@@ -1,0 +1,2 @@
+# This directory stores task definitions for the harness system.
+# Tasks are units of work that can be executed by agents.

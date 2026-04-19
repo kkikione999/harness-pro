@@ -1,0 +1,31 @@
+{
+  "eval_id": 1,
+  "configuration": "with_skill",
+  "expectations": [
+    {
+      "text": "classifies_as_simple",
+      "passed": true,
+      "evidence": "### Complexity Classification: SIMPLE ... The task matches the **Simple** row in the complexity table"
+    },
+    {
+      "text": "no_execution_plan",
+      "passed": true,
+      "evidence": "No formal execution plan file (`docs/exec-plans/{task-name}.md`) is created. Step 4 (Plan & Approve) only applies to medium/complex tasks."
+    },
+    {
+      "text": "direct_execution",
+      "passed": true,
+      "evidence": "**Mode**: Direct execution (not delegated to a sub-agent). ... **No sub-agent delegation.** The coordinator handles this directly because it is a Simple task"
+    },
+    {
+      "text": "lightweight_validation",
+      "passed": true,
+      "evidence": "| Simple file edit | build -> test | ... lint-deps: Skipped ... lint-quality: Skipped ... verify (E2E): Skipped"
+    },
+    {
+      "text": "no_cross_review",
+      "passed": true,
+      "evidence": "**Skipped.** The cross-review reference explicitly lists when to skip: ... Simple tasks -- direct execution, no delegation occurred"
+    }
+  ]
+}

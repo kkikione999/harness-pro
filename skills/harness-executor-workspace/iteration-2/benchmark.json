@@ -1,0 +1,72 @@
+{
+  "skill_name": "harness-executor",
+  "iteration": 2,
+  "timestamp": "2026-04-19",
+  "focus": "memory-operations",
+  "configurations": [
+    {
+      "name": "with_skill",
+      "evals": [
+        {
+          "eval_id": 4,
+          "eval_name": "first-time-procedural",
+          "pass_rate": 1.0,
+          "passed": 7,
+          "total": 7,
+          "duration_seconds": 93.6,
+          "total_tokens": 0
+        },
+        {
+          "eval_id": 5,
+          "eval_name": "compilation-trigger",
+          "pass_rate": 1.0,
+          "passed": 7,
+          "total": 7,
+          "duration_seconds": 143.7,
+          "total_tokens": 0
+        },
+        {
+          "eval_id": 6,
+          "eval_name": "failure-memory-writing",
+          "pass_rate": 0.875,
+          "passed": 7,
+          "total": 8,
+          "duration_seconds": 287.9,
+          "total_tokens": 0
+        },
+        {
+          "eval_id": 7,
+          "eval_name": "episodic-discovery",
+          "pass_rate": 1.0,
+          "passed": 6,
+          "total": 6,
+          "duration_seconds": 219.8,
+          "total_tokens": 0
+        },
+        {
+          "eval_id": 8,
+          "eval_name": "lookup-before-exec",
+          "pass_rate": 1.0,
+          "passed": 7,
+          "total": 7,
+          "duration_seconds": 115.5,
+          "total_tokens": 0
+        }
+      ],
+      "summary": {
+        "mean_pass_rate": 0.975,
+        "total_passed": 34,
+        "total_assertions": 35,
+        "mean_duration_seconds": 172.1,
+        "total_tokens": 0
+      }
+    }
+  ],
+  "analyst_observations": [
+    "**CRITICAL: Failure memory format inconsistency confirmed** — Eval 6 revealed that memory.md and completion.md define the same failure record type with different schemas. memory.md includes 'resolution' but lacks 'context_turns_at_failure'; completion.md includes 'context_turns_at_failure' but lacks 'resolution'. This is a spec bug that needs unification.",
+    "**Procedural memory lifecycle works end-to-end** — Evals 4→5→8 show the full lifecycle: first-time procedural creation (2/2→3/3), compilation trigger (READY TO COMPILE), script generation, and lookup-before-exec reusing compiled patterns. The progression is consistent.",
+    "**Episodic memory correctly captures non-obvious lessons** — Eval 7 correctly identifies that macOS /var symlink is a non-obvious constraint, writes it in the correct format, and suggests lint-quality rule promotion via Critic-Refiner loop.",
+    "**Memory lookup order is consistent** — Eval 8 confirms the 4-step lookup order: INDEX.md → procedural → episodic → recent failures. All three memory types are consulted and applied to execution.",
+    "**Eval 6 took significantly longer (287.9s)** — This eval involves the most complex scenario (3 repair attempts + context budget analysis + failure writing + Critic flagging). The longer duration reflects the deeper analysis required for failure scenarios."
+  ]
+}

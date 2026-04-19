@@ -1,0 +1,23 @@
+{
+  "skill_name": "harness-executor",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Fix the typo in docs/ARCHITECTURE.md where ' Layer 3' should be 'Layer 3' (extra space before 'Layer 3' on line 15). Just fix the typo, nothing else.",
+      "expected_output": "Simple typo fix applied to line 15 of docs/ARCHITECTURE.md. No validation needed beyond build sanity check.",
+      "files": ["docs/ARCHITECTURE.md"]
+    },
+    {
+      "id": 2,
+      "prompt": "Add a new CLI command 'harness validate' to the project. This command should call scripts/validate.py and return its exit code. The command should be registered in the main CLI entry point. This affects multiple files (new command file + CLI registration + potential config changes).",
+      "expected_output": "Execution plan created at docs/exec-plans/, human approval sought, then delegated to sub-agent. After execution, validation pipeline (build → lint-deps → test → verify) passes.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "The project has a circular dependency issue between services/UserService.swift and services/AuthService.swift. They import each other. Refactor to break the cycle using a protocol-based approach. This is a structural refactoring that touches architecture.",
+      "expected_output": "Execution plan created with architecture analysis, delegated to sub-agent with worktree isolation. Layer rules validated throughout. Final validation passes full pipeline.",
+      "files": ["services/UserService.swift", "services/AuthService.swift"]
+    }
+  ]
+}
