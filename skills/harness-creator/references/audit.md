@@ -38,7 +38,7 @@ Check for existence and quality of:
 | `scripts/validate.py` | 10% | Exists, runs build → lint → test |
 | Build step defined | 5% | Can build project |
 | Test step defined | 5% | Can run tests |
-| Verify step exists | 5% | E2E verification (even skeleton) |
+| Verify step exists | 5% | E2E verification: `scripts/verify/run.py` with real content OR `docs/E2E.md` with tool guide |
 
 ### 4. Harness Structure (15%)
 

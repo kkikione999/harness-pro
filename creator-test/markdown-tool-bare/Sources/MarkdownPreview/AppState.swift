@@ -43,13 +43,17 @@ final class AppState: ObservableObject {
     @Published private(set) var windowTitle = "Markdown Preview"
     @Published var renderMode: MarkdownRenderMode = .rendered
 
+    let watchEnabled: Bool
     private let filePollInterval: Duration
     private var filePollingTask: TaskBox?
+    private let fileWatcher: FileWatcher
     private var monitoredSignature: FileSignature?
     private var monitoredURL: URL?
 
-    init(initialURL: URL? = nil, pollInterval: Duration = .milliseconds(700)) {
+    init(initialURL: URL? = nil, pollInterval: Duration = .milliseconds(700), watchEnabled: Bool = false) {
         self.filePollInterval = pollInterval
+        self.watchEnabled = watchEnabled
+        self.fileWatcher = FileWatcher()
         if let initialURL {
             open(url: initialURL)
         }
@@ -106,30 +110,36 @@ final class AppState: ObservableObject {
         stopMonitoring()
         monitoredURL = url
         monitoredSignature = fileSignature(for: url)
-        let box = TaskBox()
-        box.task = Task { [weak self] in
-            while true {
-                do {
-                    try await Task.sleep(for: self?.filePollInterval ?? .seconds(1))
-                } catch {
-                    break
-                }
 
-                if Task.isCancelled {
-                    break
-                }
+        if watchEnabled {
+            fileWatcher.startWatching(url: url, delegate: self)
+        } else {
+            let box = TaskBox()
+            box.task = Task { [weak self] in
+                while true {
+                    do {
+                        try await Task.sleep(for: self?.filePollInterval ?? .seconds(1))
+                    } catch {
+                        break
+                    }
 
-                await MainActor.run {
-                    self?.pollForExternalChanges(expectedURL: url)
+                    if Task.isCancelled {
+                        break
+                    }
+
+                    await MainActor.run {
+                        self?.pollForExternalChanges(expectedURL: url)
+                    }
                 }
             }
+            filePollingTask = box
         }
-        filePollingTask = box
     }
 
     private func stopMonitoring() {
         filePollingTask?.task?.cancel()
         filePollingTask = nil
+        fileWatcher.stopWatching()
         monitoredURL = nil
         monitoredSignature = nil
     }
@@ -161,6 +171,15 @@ final class AppState: ObservableObject {
         }
 
         return signature
+    }
+}
+
+// MARK: - FileWatcherDelegate Conformance
+
+extension AppState: FileWatcherDelegate {
+    func fileWatcherDidDetectChange(_ watcher: FileWatcher) {
+        guard let url = monitoredURL else { return }
+        load(url: url, restartMonitoring: false)
     }
 }
 

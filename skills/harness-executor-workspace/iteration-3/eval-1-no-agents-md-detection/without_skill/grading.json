@@ -1,0 +1,19 @@
+{
+  "assertions": [
+    {
+      "text": "detects_missing_agents_md",
+      "passed": false,
+      "evidence": "The baseline agent never mentioned AGENTS.md or checked for harness infrastructure. It proceeded directly to explore the project and implement the feature."
+    },
+    {
+      "text": "does_not_skip_detection",
+      "passed": false,
+      "evidence": "The baseline skipped all environment detection and went straight to reading source files and implementing the copy-to-clipboard feature."
+    },
+    {
+      "text": "offers_options",
+      "passed": false,
+      "evidence": "No options were offered. The agent directly implemented the feature without any environment assessment or user consultation about approach."
+    }
+  ]
+}

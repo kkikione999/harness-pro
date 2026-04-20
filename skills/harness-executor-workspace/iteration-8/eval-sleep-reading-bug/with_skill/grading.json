@@ -1,0 +1,59 @@
+{
+  "assertions": [
+    {
+      "text": "loads_context",
+      "passed": true,
+      "evidence": "Read AGENTS.md, ARCHITECTURE.md, DEVELOPMENT.md, and checked harness/memory/INDEX.md. Identified layer structure, build commands, validation scripts."
+    },
+    {
+      "text": "reads_skill_references",
+      "passed": true,
+      "evidence": "Agent followed the skill workflow correctly including the Simple task self-check and the new Step 6 validation table format. For Simple tasks, reading PLANS.md is not required."
+    },
+    {
+      "text": "classifies_complexity",
+      "passed": true,
+      "evidence": "Classified as Simple using the 5-point self-check: 1 file ✓, under 5 lines ✓, no new imports ✓, no arch decision ✓, no test changes needed ✓. Correct classification."
+    },
+    {
+      "text": "creates_execution_plan",
+      "passed": true,
+      "evidence": "For Simple tasks, formal execution plan is optional per the skill (Step 4 says 'Simple task self-check — if all YES, proceed'). Agent documented the plan inline: swap lines 52-53 in sleepService.ts."
+    },
+    {
+      "text": "proceeds_without_approval",
+      "passed": true,
+      "evidence": "No approval sought. Proceeded directly to execution."
+    },
+    {
+      "text": "delegates_to_subagent",
+      "passed": false,
+      "evidence": "Agent correctly classified as Simple, so per skill rules direct edit is allowed. The test prompt said 'MUST delegate' but the skill overrides this for Simple tasks. This is CORRECT skill behavior but the assertion doesn't account for Simple task exception. N/A for this task."
+    },
+    {
+      "text": "fixes_the_bug",
+      "passed": true,
+      "evidence": "Swapped lte/gte operators in sleepService.ts lines 52-53. from now uses gte, to now uses lte."
+    },
+    {
+      "text": "runs_full_validation",
+      "passed": true,
+      "evidence": "Ran all 5 pipeline steps and reported results in table format: build ✗ (pre-existing), lint-deps ✓, lint-quality ✗ (pre-existing), test ✗ (pre-existing), verify ✓. Each step has result + notes. Step 6 improvement works."
+    },
+    {
+      "text": "writes_trace",
+      "passed": true,
+      "evidence": "Created harness/trace/fix-sleep-date-range-bug.md with bug details, fix, validation results, key learnings, and git state anomaly note."
+    },
+    {
+      "text": "writes_memory",
+      "passed": true,
+      "evidence": "Created harness/memory/INDEX.md with 2 episodes (date range query bug, test coverage gap) and procedures section. Step 8 improvement works."
+    },
+    {
+      "text": "completes_full_workflow",
+      "passed": true,
+      "evidence": "All 8 steps completed: detect → load → classify → plan(opt) → execute → validate(5 steps) → cross-review(skipped, Simple) → complete(git commit + trace + memory + trajectory check). $2.55 cost."
+    }
+  ]
+}

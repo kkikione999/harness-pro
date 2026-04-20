@@ -6,12 +6,12 @@ import SwiftUI
 
 @MainActor
 protocol AppStateFactory {
-    func makeAppState(initialURL: URL?) -> any AppStateProtocol
+    func makeAppState(initialURL: URL?, watchEnabled: Bool) -> any AppStateProtocol
 }
 
 final class DefaultAppStateFactory: AppStateFactory {
-    func makeAppState(initialURL: URL?) -> any AppStateProtocol {
-        AppState(initialURL: initialURL)
+    func makeAppState(initialURL: URL?, watchEnabled: Bool) -> any AppStateProtocol {
+        AppState(initialURL: initialURL, watchEnabled: watchEnabled)
     }
 }
 
@@ -29,8 +29,8 @@ final class AppWindowManager {
         self.appStateFactory = factory
     }
 
-    func openWindow(with url: URL? = nil) {
-        let appState = appStateFactory.makeAppState(initialURL: url)
+    func openWindow(with url: URL? = nil, watchEnabled: Bool = false) {
+        let appState = appStateFactory.makeAppState(initialURL: url, watchEnabled: watchEnabled)
         let controller = PreviewWindowController(
             appState: appState,
             onOpenFile: { [weak self] in

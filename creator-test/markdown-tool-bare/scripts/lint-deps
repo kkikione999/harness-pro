@@ -1,0 +1,134 @@
+#!/bin/zsh
+# Lint architecture: check Swift layer dependencies
+
+set -euo pipefail
+
+# Layer mapping (inferred from codebase)
+declare -A LAYERS=(
+    # Layer 0: Types (no internal imports)
+    ["MarkdownFileType"]=0
+    ["MarkdownRenderMode"]=0
+    # Layer 1: Utils (import only L0)
+    ["LinkHandling"]=1
+    ["CommandLineArguments"]=1
+    # Layer 3: Services (import L0, L1)
+    ["MarkdownInteractions"]=3
+    ["FileWatcher"]=3
+    # Layer 4: UI (import any lower)
+    ["AppState"]=4
+    ["AppStateProtocol"]=4
+    ["AppStateFactory"]=4
+    ["DefaultAppStateFactory"]=4
+    ["AppWindowManager"]=4
+    ["PreviewWindowController"]=4
+    ["ContentView"]=4
+    ["MarkdownPreviewView"]=4
+    ["ReadOnlyTextView"]=4
+    ["EditableTextView"]=4
+    ["AppDelegate"]=4
+    ["MarkdownPreviewApp"]=4
+    ["FileWatcherDelegate"]=4
+)
+
+# External modules to skip (framework + third-party)
+EXTERNAL_MODULES=(
+    "Foundation"
+    "AppKit"
+    "SwiftUI"
+    "Combine"
+    "UniformTypeIdentifiers"
+    "MarkdownUI"
+    "Dispatch"
+    "OS"
+    "XCTest"
+)
+
+ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+SOURCES_DIR="$ROOT_DIR/Sources"
+VIOLATIONS=0
+
+is_external() {
+    local mod="$1"
+    for ext in "${EXTERNAL_MODULES[@]}"; do
+        [[ "$mod" == "$ext" ]] && return 0
+    done
+    return 1
+}
+
+get_layer() {
+    local file="$1"
+    local basename
+    basename="$(basename "$file" .swift)"
+    if (( ${+LAYERS[$basename]} )); then
+        echo "${LAYERS[$basename]}"
+        return 0
+    fi
+    # Unknown files default to Layer 4
+    echo "4"
+}
+
+layer_name() {
+    case "$1" in
+        0) echo "Types" ;;
+        1) echo "Utils" ;;
+        3) echo "Services" ;;
+        4) echo "UI" ;;
+        *) echo "Unknown" ;;
+    esac
+}
+
+check_violations() {
+    local file="$1"
+    local file_layer
+    file_layer="$(get_layer "$file")"
+    local file_basename
+    file_basename="$(basename "$file")"
+
+    while IFS= read -r line; do
+        [[ -z "$line" ]] && continue
+        local mod="${line#import }"
+
+        is_external "$mod" && continue
+
+        # Skip if we don't track this module
+        if ! (( ${+LAYERS[$mod]} )); then
+            continue
+        fi
+
+        local import_layer="${LAYERS[$mod]}"
+
+        # Violation: lower layer (smaller number) imports higher layer (larger number)
+        if [[ "$file_layer" -lt "$import_layer" ]]; then
+            echo ""
+            echo "VIOLATION FOUND"
+            echo ""
+            echo "  File: $file_basename (Layer $file_layer - $(layer_name $file_layer))"
+            echo "  Imports: $mod (Layer $import_layer - $(layer_name $import_layer))"
+            echo ""
+            echo "  THE RULE: Higher layers can import lower layers; lower CANNOT import higher."
+            echo "  WHY WRONG: Layer $file_layer ($(layer_name $file_layer)) should not depend on Layer $import_layer ($(layer_name $import_layer))."
+            echo "    This creates tight coupling and breaks the dependency rule."
+            echo ""
+            echo "  HOW TO FIX:"
+            echo "    1. Move the dependency to a lower layer"
+            echo "    2. Pass the needed value as a parameter from the caller"
+            echo "    3. Create a protocol/abstraction in an intermediate layer"
+            echo ""
+            VIOLATIONS=$((VIOLATIONS + 1))
+        fi
+    done < <(grep -h "^import " "$file" 2>/dev/null || true)
+}
+
+echo "Checking Swift layer dependencies..."
+
+while IFS= read -r -d '' file; do
+    check_violations "$file"
+done < <(find "$SOURCES_DIR" -name "*.swift" -print0)
+
+if [[ "$VIOLATIONS" -eq 0 ]]; then
+    echo "OK: No layer violations found"
+    exit 0
+else
+    echo "FAIL: Found $VIOLATIONS layer violation(s)"
+    exit 1
+fi

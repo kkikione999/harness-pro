@@ -1,0 +1,15 @@
+{
+  "eval_id": 6,
+  "eval_name": "delete-friend-v3",
+  "prompt": "In the project at /Users/josh_folder/hp-sleeper-test/, implement a delete friend feature. When one user deletes a friend, both users' friend relationship should be removed (bidirectional deletion). This needs changes to the backend API, service layer, and iOS app.",
+  "assertions": [
+    {"name": "loads_context", "check": "Reads AGENTS.md, ARCHITECTURE.md, and DEVELOPMENT.md from the project"},
+    {"name": "reads_skill_references", "check": "Reads PLANS.md and relevant reference files from the skill directory"},
+    {"name": "classifies_complexity", "check": "Explicitly classifies task complexity with justification"},
+    {"name": "creates_execution_plan", "check": "Creates a structured execution plan with phases, scope, and rollback"},
+    {"name": "proceeds_without_approval", "check": "Presents plan summary then proceeds directly to execution without waiting for approval"},
+    {"name": "delegates_to_subagent", "check": "Delegates implementation to a sub-agent rather than writing code directly"},
+    {"name": "validates_after_execution", "check": "Runs validation pipeline after implementation"},
+    {"name": "completes_full_workflow", "check": "Completes all workflow steps through Step 8 including trace/memory writing"}
+  ]
+}

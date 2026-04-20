@@ -12,8 +12,8 @@ Generate files in this order (dependencies matter):
 4. **scripts/lint-deps** — Enforces layer rules (educational errors required)
 5. **scripts/lint-quality** — Enforces code quality
 6. **scripts/validate.py** — Unified entry point (MUST include verify step)
-7. **scripts/verify/** — E2E test skeletons (even if skeleton only)
-8. **harness/** — Directory structure
+7. **harness/** — Directory structure
+8. **E2E Verification** — Read `references/e2e-strategies.md` → detect mode → generate `docs/E2E.md` or `scripts/verify/` or both
 
 ## AGENTS.md Template
 
@@ -177,16 +177,41 @@ if __name__ == "__main__":
     main()
 ```
 
-## scripts/verify/ Structure
+## E2E Verification Generation
 
-```
-verify/
-├── run.py          # Main entry, runs all verifications
-├── test_cli.py     # CLI test (if applicable)
-└── test_api.py     # API test (if applicable)
+Read `references/e2e-strategies.md` for the full framework. Summary:
+
+### Step 1: Detect E2E Mode
+
+Check project type and available tools:
+
+```python
+def detect_e2e_mode(project_type, available_mcp_tools):
+    has_ui = project_type has a user interface
+    has_interactive_tool = Chrome DevTools MCP / Playwright MCP / etc. available
+    can_script = system has CLI or HTTP interface
+
+    if has_ui and has_interactive_tool → "realtime"
+    elif can_script → "script"
+    elif has_ui → "needs-scaffolding"
 ```
 
-Each verify script should have TODO markers for user to fill in.
+### Step 2: Generate Artifacts by Mode
+
+| Mode | Generate |
+|------|----------|
+| Real-time Interactive | `docs/E2E.md` only (tool guide + core user paths) |
+| Script Execution | `scripts/verify/run.py` (real structure, not just TODO) |
+| Needs Scaffolding | `docs/E2E.md` (scaffolding direction + future paths) |
+
+### Step 3: Update validate.py
+
+If generating `scripts/verify/run.py`, ensure `scripts/validate.py` includes it in the pipeline.
+If generating `docs/E2E.md` (real-time mode), `validate.py` should note that verify runs interactively.
+
+### Mixed Mode
+
+A project can need both (e.g., REST API + web UI). Generate both artifacts.
 
 ## harness/ Directory Structure
 

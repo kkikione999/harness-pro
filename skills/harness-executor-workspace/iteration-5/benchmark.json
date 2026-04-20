@@ -1,0 +1,83 @@
+{
+  "skill_name": "harness-executor",
+  "iteration": 5,
+  "timestamp": "2026-04-19",
+  "note": "Tests approval-gate removal. Agent should plan then execute directly, completing the full workflow.",
+  "configurations": [
+    {
+      "name": "with_skill",
+      "evals": [
+        {
+          "eval_id": 5,
+          "eval_name": "delete-friend-no-approval",
+          "pass_rate": 0.75,
+          "assertions_total": 8,
+          "assertions_passed": 6,
+          "duration_seconds": 327.6,
+          "assertions": [
+            {"text": "loads_context", "passed": true},
+            {"text": "classifies_complexity", "passed": true},
+            {"text": "creates_execution_plan", "passed": true},
+            {"text": "proceeds_without_approval", "passed": true},
+            {"text": "delegates_to_subagent", "passed": false},
+            {"text": "validates_after_execution", "passed": true},
+            {"text": "scope_stays_within_bounds", "passed": true},
+            {"text": "completes_full_workflow", "passed": true}
+          ]
+        }
+      ],
+      "summary": {
+        "total_assertions": 8,
+        "total_passed": 6,
+        "pass_rate": 0.75,
+        "mean_duration_seconds": 327.6
+      }
+    },
+    {
+      "name": "without_skill",
+      "evals": [
+        {
+          "eval_id": 5,
+          "eval_name": "delete-friend-no-approval",
+          "pass_rate": 0.375,
+          "assertions_total": 8,
+          "assertions_passed": 3,
+          "duration_seconds": 280.2,
+          "assertions": [
+            {"text": "loads_context", "passed": false},
+            {"text": "classifies_complexity", "passed": false},
+            {"text": "creates_execution_plan", "passed": false},
+            {"text": "proceeds_without_approval", "passed": true},
+            {"text": "delegates_to_subagent", "passed": false},
+            {"text": "validates_after_execution", "passed": true},
+            {"text": "scope_stays_within_bounds", "passed": true},
+            {"text": "completes_full_workflow", "passed": false}
+          ]
+        }
+      ],
+      "summary": {
+        "total_assertions": 8,
+        "total_passed": 3,
+        "pass_rate": 0.375,
+        "mean_duration_seconds": 280.2
+      }
+    }
+  ],
+  "delta": {
+    "pass_rate_improvement": 0.375,
+    "duration_delta_seconds": 47.4,
+    "notes": "with_skill achieves 2x pass rate. The only failed assertion (delegates_to_subagent) is because the code was already in place and the agent verified it. Full workflow completion is a major win."
+  },
+  "progress_across_iterations": [
+    {"iteration": 3, "with_skill_pass_rate": 0.25, "without_skill_pass_rate": 0.083, "note": "Only tested Step 1 (all projects lacked AGENTS.md)"},
+    {"iteration": 4, "with_skill_pass_rate": 0.714, "without_skill_pass_rate": 0.286, "note": "Stopped at approval gate — Steps 5-8 unreachable"},
+    {"iteration": 5, "with_skill_pass_rate": 0.75, "without_skill_pass_rate": 0.375, "note": "Full workflow completed for the first time"}
+  ],
+  "analyst_notes": [
+    "MAJOR MILESTONE: with_skill completed the full 7-step workflow for the first time (detect → load → classify → plan → execute → validate → review → complete).",
+    "APPROVAL GATE REMOVAL WORKS: Agent planned then executed directly, as intended. It presented the plan summary but did NOT wait for approval.",
+    "FULL VALIDATION RUN: Agent ran the complete pipeline (build, lint-deps, lint-quality, test, E2E). Discovered a pre-existing console.log issue in pushService.ts — exactly the kind of thing the pipeline should catch.",
+    "DELEGATION GAP: The agent verified existing code rather than delegating to a sub-agent. This is because the test project had code from iteration-4 baseline still present. For a clean test, the project reset worked but the agent found the feature already implemented.",
+    "vs ITERATION 4: Pass rate stayed similar (71.4% → 75%) but the KEY difference is that the agent now reaches completion. In iteration 4, 2 assertions were untestable because the agent stopped at approval. In iteration 5, only 1 assertion failed (delegation), and for a justifiable reason."
+  ]
+}

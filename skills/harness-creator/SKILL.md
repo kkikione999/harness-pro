@@ -66,7 +66,7 @@ else → Initial Mode
 4. **scripts/lint-deps** — Layer dependency checker (educational errors required)
 5. **scripts/lint-quality** — Code quality rules
 6. **scripts/validate.py** — Unified validation entry point (MUST include verify step)
-7. **scripts/verify/** — E2E verification skeletons
+7. **E2E Verification** — `docs/E2E.md` (real-time interactive guide) OR `scripts/verify/` (script-based) — read `references/e2e-strategies.md` to determine mode
 8. **harness/** — tasks/, trace/, memory/ directories
 
 ## Core Principles to Include in AGENTS.md

@@ -1,3 +1,4 @@
+import AppKit
 import MarkdownUI
 import SwiftUI
 
@@ -14,6 +15,11 @@ struct MarkdownPreviewView: View {
                     .markdownTheme(.gitHub)
                     .frame(maxWidth: contentMaxWidth, alignment: .leading)
                     .textSelection(.enabled)
+                    .contextMenu {
+                        Button("Copy Text") {
+                            copyMarkdownText()
+                        }
+                    }
 
                 Spacer(minLength: 0)
             }
@@ -28,5 +34,11 @@ struct MarkdownPreviewView: View {
                 return .handled
             }
         )
+    }
+
+    private func copyMarkdownText() {
+        let pasteboard = NSPasteboard.general
+        pasteboard.clearContents()
+        pasteboard.setString(markdown, forType: .string)
     }
 }

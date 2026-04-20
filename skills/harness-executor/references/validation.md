@@ -114,27 +114,31 @@ If still failing after 3 self-repair attempts:
     → Report to human for manual intervention
 ```
 
-## Verify (E2E) Skeleton
+## Verify (E2E)
 
-If `scripts/verify/run.py` doesn't exist yet:
+E2E verification has two forms. Check which exists:
+
+### Form 1: Real-time Interactive (`docs/E2E.md` exists)
+
+Read `docs/E2E.md` and follow the guide. This is NOT a script — it describes how to use an interactive tool (e.g., Chrome DevTools MCP) to verify the running system.
+
+Steps:
+1. Read `docs/E2E.md`
+2. Follow the core user paths using the specified tool
+3. Report result: PASS if all paths verified, FAIL if any path broken
+
+This is a real-time verification — you interact with the system, observe outcomes, and judge correctness.
+
+### Form 2: Script Execution (`scripts/verify/run.py` exists)
 
 ```bash
-# Create the skeleton
-mkdir -p scripts/verify
-cat > scripts/verify/run.py << 'EOF'
-#!/usr/bin/env python3
-"""E2E verification runner."""
-
-def main():
-    print("TODO: Implement E2E verification for your project")
-    print("This should verify the actual functionality works end-to-end")
-    return True
-
-if __name__ == "__main__":
-    import sys
-    sys.exit(0 if main() else 1)
-EOF
-chmod +x scripts/verify/run.py
+python3 scripts/verify/run.py
 ```
 
-Fill in the TODOs based on your project's core user flows.
+### Form 3: Neither exists
+
+Result = `SKIPPED — no E2E verification available`. Recommend running `harness-creator` to generate E2E strategy.
+
+### Multiple forms
+
+Both `docs/E2E.md` and `scripts/verify/run.py` can coexist (e.g., web app with both API endpoints and UI). Run both.

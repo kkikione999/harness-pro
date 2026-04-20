@@ -1,0 +1,95 @@
+{
+  "skill_name": "harness-executor",
+  "iteration": 3,
+  "timestamp": "2026-04-19",
+  "configurations": [
+    {
+      "name": "with_skill",
+      "evals": [
+        {
+          "eval_id": 1,
+          "eval_name": "no-agents-md-detection",
+          "pass_rate": 0.667,
+          "assertions_total": 3,
+          "assertions_passed": 2,
+          "duration_seconds": 393.4,
+          "notes": "Correctly detected missing AGENTS.md, invoked harness-creator, did not skip to task execution. Failed 'offers_options' because it didn't present a choice to the user."
+        },
+        {
+          "eval_id": 2,
+          "eval_name": "simple-task-classification",
+          "pass_rate": 0.25,
+          "assertions_total": 4,
+          "assertions_passed": 1,
+          "duration_seconds": 133.0,
+          "notes": "Correctly detected missing AGENTS.md and treated as non-harness project. Did not classify or validate because task was invalid (typo didn't exist). Only 'executes_directly' passed."
+        },
+        {
+          "eval_id": 3,
+          "eval_name": "medium-task-planning",
+          "pass_rate": 0.0,
+          "assertions_total": 5,
+          "assertions_passed": 0,
+          "duration_seconds": 336.3,
+          "notes": "Agent correctly prioritized Step 1 (AGENTS.md missing → bootstrap), spending entire context on infrastructure creation. Never reached the actual task planning/execution. Assertions target task-level behavior which was never reached."
+        }
+      ],
+      "summary": {
+        "total_assertions": 12,
+        "total_passed": 3,
+        "pass_rate": 0.25,
+        "mean_duration_seconds": 287.6
+      }
+    },
+    {
+      "name": "without_skill",
+      "evals": [
+        {
+          "eval_id": 1,
+          "eval_name": "no-agents-md-detection",
+          "pass_rate": 0.0,
+          "assertions_total": 3,
+          "assertions_passed": 0,
+          "duration_seconds": 152.4,
+          "notes": "No environment detection. Directly implemented the feature (which already existed in code). No awareness of harness infrastructure."
+        },
+        {
+          "eval_id": 2,
+          "eval_name": "simple-task-classification",
+          "pass_rate": 0.25,
+          "assertions_total": 4,
+          "assertions_passed": 1,
+          "duration_seconds": 85.0,
+          "notes": "Searched for typo, found it didn't exist, reported back. Only 'executes_directly' passed by default."
+        },
+        {
+          "eval_id": 3,
+          "eval_name": "medium-task-planning",
+          "pass_rate": 0.0,
+          "assertions_total": 5,
+          "assertions_passed": 0,
+          "duration_seconds": 287.6,
+          "notes": "Directly implemented --watch feature across 5 files with 8 tests. No planning, no approval, no delegation, no architecture analysis."
+        }
+      ],
+      "summary": {
+        "total_assertions": 12,
+        "total_passed": 1,
+        "pass_rate": 0.083,
+        "mean_duration_seconds": 175.0
+      }
+    }
+  ],
+  "delta": {
+    "pass_rate_improvement": 0.167,
+    "duration_overhead_seconds": 112.6,
+    "notes": "with_skill shows better environment awareness (Step 1 detection works) but assertions targeting later steps (planning, delegation, approval) cannot pass because the agent correctly prioritizes infrastructure bootstrap over task execution when AGENTS.md is missing."
+  },
+  "analyst_notes": [
+    "CRITICAL FINDING: All 3 test projects lack AGENTS.md, so every with_skill run hits Step 1 and spends context on infrastructure creation. This is correct behavior but makes the test design inadequate for evaluating Steps 3-8.",
+    "POSITIVE: Step 1 hard-blocking works. Both eval-1 and eval-3 with_skill correctly detected missing AGENTS.md and invoked harness-creator. The old skill would have skipped this.",
+    "NEGATIVE: The 'offers_options' assertion failed for eval-1 — the agent didn't present a choice, it just auto-invoked harness-creator. This may be acceptable or may need fixing depending on intent.",
+    "TEST DESIGN ISSUE: Eval 2's typo doesn't exist in the test project. Need a real small change for the next iteration.",
+    "TEST DESIGN ISSUE: All evals use a project without AGENTS.md, so we can only evaluate Step 1. Need at least one eval with a harness-managed project (AGENTS.md present) to test Steps 2-8."
+  ]
+}

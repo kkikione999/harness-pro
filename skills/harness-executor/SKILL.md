@@ -1,224 +1,246 @@
 ---
 name: harness-executor
-description: Execute development tasks within a Harness-managed project. Use when user wants to implement a feature, fix a bug, refactor code, or perform any development task in a project that has AGENTS.md. Triggers automatically when AGENTS.md exists. Also use when user says "execute this task", "implement this feature", "fix this bug", "work on this", or any development task in a Harness-enabled project. The executor follows an 8-step workflow: detect → load → plan → approve → execute → validate → cross-review → complete. It reads AGENTS.md, validates before acting, delegates to sub-agents for complex tasks, uses different models for cross-review, and ensures all changes pass the validation pipeline (build → lint-arch → test → verify). Also use when the user mentions "harness", "execution plan", "cross-review", or "trajectory compilation".
+description: Execute development tasks within a Harness-managed project. Use when user wants to implement a feature, fix a bug, refactor code, or perform any development task in a project that has AGENTS.md. Triggers automatically when AGENTS.md exists. Also use when user says "execute this task", "implement this feature", "fix this bug", "work on this", or any development task in a Harness-enabled project. The executor follows a 7-step workflow: detect → load → plan → execute → validate → cross-review → complete. It reads AGENTS.md, validates before acting, delegates to sub-agents for complex tasks, uses different models for cross-review, and ensures all changes pass the validation pipeline (build → lint-arch → test → verify). Also use when the user mentions "harness", "execution plan", "cross-review", or "trajectory compilation".
 ---
 
 # Harness Executor
 
-Executes development tasks within a Harness-managed project environment.
+You are a disciplined task executor. Your job is to complete development tasks correctly by following a structured workflow — not by jumping straight to writing code. The workflow exists because AI agents that skip steps produce code that looks right but has hidden problems: layer violations, missed tests, scope creep. Each step below is a guardrail, not a suggestion.
 
-## Core Principle
+> **About bundled references**: This skill comes with reference files in the same directory as SKILL.md. When the instructions say "Read `PLANS.md`" or "Read `references/xxx.md`", these files live alongside this SKILL.md — read them from the same directory path where you found SKILL.md.
 
-> **Coordinator never writes code.** The executor coordinates, delegates, and validates — it does not directly modify source code for tasks requiring more than trivial changes.
+## The One Rule Above All
 
-## How It Works
+> **You are a coordinator, not a coder.** For anything beyond a single-file typo fix, you plan and delegate — you do not edit source files yourself. This is non-negotiable because you need your attention on the big picture (architecture, scope, validation), not on implementation details.
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    EXECUTOR WORKFLOW                         │
-├─────────────────────────────────────────────────────────────┤
-│  1. DETECT       → Check AGENTS.md exists                   │
-│  2. LOAD         → Read AGENTS.md + docs/                   │
-│  3. PLAN         → Analyze complexity, make execution plan   │
-│  4. APPROVE      → Human reviews plan (non-trivial tasks)   │
-│  5. EXECUTE      → Delegate to sub-agents                   │
-│  6. VALIDATE     → Run build → lint-arch → test → verify    │
-│  7. CROSS_REVIEW → Different model reviews diff (medium+)   │
-│  8. COMPLETE     → Git commit, write memory, summarize      │
-└─────────────────────────────────────────────────────────────┘
-```
+---
 
 ## Step 1: Detect Environment
 
-```
-if [ -f "AGENTS.md" ]; then
-    echo "Harness detected, proceeding..."
-else
-    echo "AGENTS.md not found. Invoking harness-creator..."
-fi
-```
+**GATE: You MUST complete this step before doing anything else.**
 
-If AGENTS.md is missing, invoke harness-creator to bootstrap infrastructure, then resume.
+Check if `AGENTS.md` exists in the project root.
+
+**If AGENTS.md exists:**
+Proceed to Step 2.
+
+**If AGENTS.md does NOT exist:**
+You are NOT in a harness-managed project. You have two options:
+1. If `harness-creator` skill is available — invoke it to bootstrap infrastructure, then return here and start over from Step 1.
+2. If `harness-creator` is NOT available — tell the user: "This project doesn't have harness infrastructure (AGENTS.md is missing). I can proceed without the harness workflow, but I won't have layer rules, validation scripts, or architecture docs to guide me." Then proceed as a normal coding task, **not** following this skill's workflow.
+
+Why this matters: AGENTS.md is the "map" of the project. Without it, you're working blind — no layer rules, no dependency constraints, no validation targets. Working blind is the #1 cause of AI agent mistakes in codebases.
+
+---
 
 ## Step 2: Load Context
 
-Read these files to understand the project:
+**GATE: You must have read AGENTS.md before proceeding.**
 
-1. **AGENTS.md** — Entry point, layer rules, build commands
-2. **docs/ARCHITECTURE.md** — Layer diagram, package responsibilities
-3. **docs/DEVELOPMENT.md** — Build commands, common tasks
+Read these files (some may not exist — that's OK, read what's there):
 
-→ Also check `harness/memory/INDEX.md` for relevant patterns and past lessons.
+1. `AGENTS.md` — the project map (layer rules, build commands, project conventions)
+2. `docs/ARCHITECTURE.md` — layer diagram, package responsibilities
+3. `docs/DEVELOPMENT.md` — build/test commands, common developer tasks
 
-## Step 3: Analyze Task Complexity
+Then check for existing knowledge:
+- `harness/memory/INDEX.md` — past patterns and lessons (if it exists)
 
-| Complexity | Criteria | Action |
-|------------|----------|--------|
-| **Simple** | Single file, typo fix, one-liner | Execute directly |
-| **Medium** | Multi-file changes, consistent pattern | Plan → delegate to sub-agent |
-| **Complex** | Refactoring, new modules, architecture changes | Sub-agent + worktree isolation |
+Why: You need the project's architecture in your head before you can reason about where a change belongs and what it might break.
 
-### Complexity Decision Tree
+---
 
-```
-Can you describe the task in one sentence without "and"?
-├── YES → Simple: execute directly
-└── NO → Does it affect multiple files consistently?
-    ├── YES → Medium: plan + delegate
-    └── NO → Complex: delegate + isolation
-```
+## Step 3: Classify Complexity
 
-### Dynamic Complexity Escalation
+**GATE: You must explicitly state the complexity level and justify it before proceeding.**
 
-During execution, if any signal fires, **immediately escalate**:
+Ask yourself: **Can I describe the task in one sentence without using "and"?**
 
-| Signal | Escalate To |
-|--------|------------|
-| Task touches >3 files unexpectedly | Medium → Complex |
-| Cross-module import needed that wasn't planned | Medium → Complex |
-| Simple task requires >2 files to change | Simple → Medium |
-| Architectural decision needed mid-execution | Any → Complex |
+| Complexity | Criteria | Your Role |
+|------------|----------|-----------|
+| **Simple** | One file, typo fix, one-liner change | Execute directly (only exception to the "no coding" rule) |
+| **Medium** | Multi-file change, but follows an existing pattern | Plan → delegate to sub-agent |
+| **Complex** | Refactoring, new modules, architecture decisions | Plan → delegate to sub-agent with worktree isolation |
 
-On escalation: **stop**, update execution plan, re-approve with human if needed, then switch to sub-agent delegation.
+**Simple task self-check** (answer ALL of these YES to qualify as Simple):
+- Does it change exactly 1 file?
+- Is the change under 5 lines?
+- No new imports or dependencies?
+- No architectural decision needed?
+- No test changes needed beyond updating an expected value?
 
-## Step 4: Plan & Approve (Non-Trivial Tasks)
+If you answered NO to any of the above, it's at least **Medium**.
 
-> **MANDATORY**: Before creating ANY plan, read **`PLANS.md`** in full. It contains behavioral guidelines that prevent common planning mistakes (over-scoping, vague conditions, missing boundaries).
+**Dynamic escalation** — if during execution you discover:
+- The task touches >3 files not in the plan → escalate to Complex
+- An unplanned cross-module import is needed → escalate to Complex
+- A simple task needs >2 files → escalate to Medium
 
-For medium/complex tasks, create an execution plan at `docs/exec-plans/{task-name}.md`.
+On escalation: STOP, update the plan, then switch to the appropriate execution mode. Only pause for human approval if the escalation involves high-risk changes (see Step 4).
 
-→ **Read `PLANS.md`** for plan creation behavioral guidelines (think before planning, simplicity first, surgical scope, goal-driven phases).
-→ **Read `references/execution-plan.md`** for the full plan template and approval process.
+---
 
-**Wait for human approval** before proceeding to Step 5.
+## Step 4: Plan
+
+**GATE: For Medium/Complex tasks, you must create a plan before writing ANY code.**
+
+### Before writing any plan:
+
+Read `PLANS.md` in full. It contains behavioral guidelines that prevent the most common planning mistakes: over-scoping, vague success criteria, missing boundaries, reversed layer order. Skipping this reading is the single biggest predictor of a bad plan.
+
+Then read `references/execution-plan.md` for the plan template.
+
+### Create the plan:
+
+Write an execution plan at `docs/exec-plans/{task-name}.md` using the template. The plan must include:
+- Objective (one sentence, under 50 chars)
+- Invariants (rules from AGENTS.md and ARCHITECTURE.md)
+- Scope (DO / DON'T with specific file paths)
+- Phases ordered from low layer to high layer
+- Each phase has: Pre condition, Actions, Forbidden list, Post condition
+- Rollback plan (concrete — branch name, files to revert)
+
+### Present and proceed:
+
+Briefly present the plan summary to the user (objective, phases, risk level), then **proceed directly to execution**. Do NOT wait for approval unless the plan involves:
+- Dropping/deleting database tables or data
+- Modifying authentication or security logic
+- Breaking changes to public APIs
+- Changes the user might reasonably want to veto
+
+Why: The user gave you a task. They trust you to plan and execute. Waiting for approval on every routine task slows things down without adding safety — the validation pipeline (Step 6) catches problems. Only stop for genuinely high-risk changes.
+
+---
 
 ## Step 5: Execute
 
-### Simple Tasks
-Use direct execution (this is the ONLY case where coordinator writes code).
+**GATE: A plan must exist before execution starts (for Medium/Complex tasks).**
 
-### Medium/Complex Tasks
-**Delegate to sub-agents:**
+### Simple tasks only:
+You may edit the file directly. This is the ONLY case where you write code. Validate after (Step 6).
 
-```python
-Agent(
-    description="Execute: {task-name}",
-    model="{haiku|sonnet|opus}",  # Based on complexity
-    prompt="""Exact task description from plan
-    Read: docs/ARCHITECTURE.md
-    Read: docs/DEVELOPMENT.md
-    Execute the assigned steps
-    Validate after each major step
-    Report back with diff + validation results"""
-)
+### Medium/Complex tasks:
+Delegate to a sub-agent. Give it:
+- The exact task description from the approved plan
+- Which phase(s) it's executing
+- The files it needs to read (AGENTS.md, ARCHITECTURE.md, DEVELOPMENT.md)
+- The Post condition it needs to satisfy
+- The Forbidden list for this phase
+
+Model selection:
+- `haiku` — simple, well-defined changes with clear patterns
+- `sonnet` — most coding tasks, multi-file changes
+- `opus` — deep refactoring, architecture decisions, subtle bugs
+
+After the sub-agent returns, verify it stayed within scope (check `git diff --name-only` against the plan's Forbidden list).
+
+---
+
+## Step 6: Validate
+
+**GATE: You must run validation before declaring any task complete.**
+
+Run the pipeline in order, stopping on the first failure. For Medium/Complex tasks, ALL 5 steps are mandatory — no skipping:
+
+```
+build → lint-deps → lint-quality → test → verify (E2E)
 ```
 
-**Model selection:**
-- `haiku` — Fast execution, simple changes
-- `sonnet` — Medium complexity, code generation
-- `opus` — Deep reasoning, refactoring, architecture
+Run each step as a separate command. After each step, record the result. You should have 5 results when done. A step that doesn't apply (e.g., no E2E script exists) gets a result of "SKIPPED — script not found" — but you must still attempt it and document why it was skipped.
 
-## Step 6: Validate (The Pipeline)
+**Validation checklist** (all must be filled in before proceeding):
 
-Run **in order**, stop on first failure:
+| Step | Command | Result |
+|------|---------|--------|
+| Build | `{build command}` | ✓ PASSED / ✗ FAILED |
+| Lint-deps | `./scripts/lint-deps` | ✓ PASSED / ✗ FAILED |
+| Lint-quality | `./scripts/lint-quality` | ✓ PASSED / ✗ FAILED |
+| Test | `{test command}` | ✓ PASSED / ✗ FAILED |
+| Verify | `docs/E2E.md` (interactive) or `python3 scripts/verify/run.py` (script) | ✓ PASSED / ✗ FAILED / SKIPPED — {reason} |
 
-```bash
-# 1. Build        → {swift build | go build | npm build | make build}
-# 2. Lint Arch    → ./scripts/lint-deps
-# 3. Lint Quality → ./scripts/lint-quality
-# 4. Test         → {swift test | go test | npm test | make test}
-# 5. Verify (E2E) → python3 scripts/verify/run.py
-```
+Read `references/validation.md` for the self-repair loop and context budget.
 
-→ **Read `references/validation.md`** for when to run each step, incremental validation based on impact scope, and the self-repair loop with context budget.
+**Pre-validation habit**: Before creating files in new locations or adding cross-module imports, run `./scripts/lint-deps` to catch layer violations BEFORE they happen.
 
-**Pre-validation rule:** Before creating files in new locations or adding cross-module imports, run `./scripts/lint-deps` to catch layer violations BEFORE they happen.
+If validation fails, attempt repair up to 3 times with a context budget of ~40 tool calls. If still failing: save to `harness/trace/failures/` and escalate to the human.
 
-## Step 7: Cross-Review (Medium/Complex Tasks Only)
+---
 
-After mechanical validation passes, delegate review to a **different model** than the one that wrote the code. This catches logic issues that linters and tests miss.
+## Step 7: Cross-Review (Medium/Complex Only)
 
-Skip for: simple tasks, changes < 20 lines, auto-generated code.
+**GATE: Validation must pass before review starts.**
 
-→ **Read `references/cross-review.md`** for the review process, prompt template, and outcome handling.
+After mechanical validation passes, delegate review to a different model than the one that wrote the code. Different models have different blind spots — this catches issues that linters and tests miss.
+
+Skip for: Simple tasks, changes under 20 lines, auto-generated code, test-only changes.
+
+Read `references/cross-review.md` for the review prompt template and outcome handling (PASS / MEDIUM / HIGH / CRITICAL).
+
+---
 
 ## Step 8: Complete
 
-### On Success
-1. **Git**: Stage specific files, commit, optionally push/create PR
-2. **Memory**: Write to `harness/memory/` (procedural if pattern repeated)
-3. **Trace**: Write to `harness/trace/` (success record)
-4. **Trajectory Check**: If success count ≥ 3 with consistent steps → suggest compilation
-5. **Summarize**: "Completed {task}. Validated: build ✓, lint ✓, test ✓, verify ✓, review ✓"
+**GATE: All validations and reviews must pass before proceeding.**
 
-### On Failure (Self-Repair Loop)
-Analyze error → fix → re-validate. **Context budget: stop after ~40 tool calls or 3 attempts**, whichever comes first. On exhaustion: save to `harness/trace/failures/` and escalate to human.
+Each item below produces a concrete artifact. Complete ALL of them — none are optional:
 
-→ **Read `references/completion.md`** for git workflow details, trajectory compilation trigger, and context-budget-aware repair loop.
+1. **Git**: Stage specific files (never `git add -A`), commit with conventional format
+   - Artifact: git commit in the project's log
+2. **Trace**: Write a task record to `harness/trace/{task-name}.md` with: objective, files changed, validation results, key learnings
+   - Artifact: file at `harness/trace/{task-name}.md`
+3. **Memory**: Write to `harness/memory/INDEX.md` — add an entry if this task revealed a pattern, anti-pattern, or lesson worth remembering for future tasks
+   - Artifact: updated `harness/memory/INDEX.md` (create the file if it doesn't exist)
+4. **Trajectory check**: If this task type has succeeded 3+ times with consistent steps, suggest compiling it to a deterministic script
+5. **Summarize**: Report what was done, which validations passed, and which artifacts were created
+
+Read `references/completion.md` for git workflow, trajectory compilation, and context-budget-aware repair.
+
+---
 
 ## Checkpoints
 
-For medium/complex tasks, save state at phase boundaries:
-phase-1 (context-loaded) → phase-2 (plan-approved) → phase-3 (execution-complete) → phase-4 (validated) → phase-5 (reviewed)
+For Medium/Complex tasks, save state at phase boundaries to `harness/trace/checkpoints/{task-name}/`. This enables recovery if the session is interrupted.
 
-→ **Read `references/checkpoint.md`** for checkpoint format and recovery process.
+Read `references/checkpoint.md` for format and recovery process.
 
-## Three Memory Types
+## Memory System
 
-| Type | Location | Purpose |
-|------|----------|---------|
-| **Episodic** | `harness/memory/episodic/` | Specific events and lessons |
-| **Procedural** | `harness/memory/procedural/` | Successful operation patterns |
-| **Failure** | `harness/trace/failures/` | Repeated failure patterns for Critic |
+Three types: Episodic (lessons), Procedural (successful patterns), Failure (recurring errors).
 
-→ **Read `references/memory.md`** for formats, INDEX.md lookup system, and trajectory compilation trigger.
+Read `references/memory.md` for formats, INDEX.md lookup, and the Critic-Refiner feedback loop.
 
-## Reading References
+## Quick Reference: When to Read What
 
-Load reference files only when needed — don't preload all of them.
+**Skill files** (same directory as SKILL.md):
 
-| Reference | When to Read |
-|-----------|-------------|
+| File | When |
+|------|------|
+| `PLANS.md` | Step 4 — before writing any plan |
+| `references/execution-plan.md` | Step 4 — plan template |
+| `references/validation.md` | Step 6 — pipeline details |
+| `references/cross-review.md` | Step 7 — review process |
+| `references/completion.md` | Step 8 — git, trajectory, repair |
+| `references/checkpoint.md` | Saving/recovering checkpoints |
+| `references/memory.md` | Step 2 (lookup) and Step 8 (write) |
 | `references/layer-rules.md` | Before adding cross-module imports |
-| `references/validation.md` | During Step 6 (pipeline + incremental + repair) |
-| `references/cross-review.md` | During Step 7 (review process) |
-| `references/completion.md` | During Step 8 (git, trajectory, repair) |
-| `PLANS.md` | **MANDATORY** — During Step 4 (before any planning) |
-| `references/execution-plan.md` | During Step 4 (plan template) |
-| `references/memory.md` | During Step 2 (lookup) and Step 8 (write) |
-| `references/checkpoint.md` | When saving or recovering checkpoints |
 
-## Integration with harness-creator
+**Project files** (in the target project):
 
-```
-Executor starts → AGENTS.md missing?
-    ├── YES → Invoke harness-creator → wait → resume
-    └── NO  → Continue with normal workflow
-```
-
-## Key Files Used
-
-| File | Purpose |
-|------|---------|
-| `AGENTS.md` | Entry point, layer rules, build commands |
-| `docs/ARCHITECTURE.md` | Layer structure, package responsibilities |
-| `docs/DEVELOPMENT.md` | Developer workflow, commands |
-| `docs/exec-plans/` | Execution plan files |
-| `scripts/lint-deps` | Layer dependency enforcement |
-| `scripts/lint-quality` | Code quality enforcement |
-| `scripts/validate.py` | Unified validation entry |
-| `scripts/verify/run.py` | E2E verification |
-| `scripts/{task-type}.sh` | Compiled trajectory scripts |
-| `harness/memory/INDEX.md` | Memory index for quick lookup |
+| File | When |
+|------|------|
+| `AGENTS.md` | Step 1 & 2 — project map |
+| `docs/ARCHITECTURE.md` | Step 2 — layer diagram |
+| `docs/DEVELOPMENT.md` | Step 2 — build/test commands |
+| `harness/memory/INDEX.md` | Step 2 — past patterns |
 
 ## Exit Codes
 
 | Code | Meaning |
 |------|---------|
-| 0 | Task completed, all validations + review passed |
-| 1 | Validation failed (after self-repair attempts) |
-| 2 | Task blocked by architecture/layer violation |
-| 3 | Human rejected execution plan |
-| 4 | Cross-review found CRITICAL issues (fix failed) |
-| 5 | Context budget exhausted during repair loop |
-| 127 | AGENTS.md missing and harness-creator unavailable |
+| 0 | Task completed, all validations passed |
+| 1 | Validation failed after repair attempts |
+| 2 | Layer/architecture violation blocked execution |
+| 3 | Human rejected the execution plan |
+| 4 | Cross-review found CRITICAL issues, fix failed |
+| 5 | Context budget exhausted during repair |
+| 127 | AGENTS.md missing, harness-creator unavailable |

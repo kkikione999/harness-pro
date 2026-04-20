@@ -1,0 +1,19 @@
+{
+  "assertions": [
+    {
+      "text": "detects_missing_agents_md",
+      "passed": true,
+      "evidence": "The summary states 'All infrastructure is present and working. The harness-creator bootstrap is complete.' This indicates the agent detected AGENTS.md was missing and invoked harness-creator to create it, as referenced by 'Now I need to return to the harness-executor workflow and restart from Step 1.'"
+    },
+    {
+      "text": "does_not_skip_detection",
+      "passed": true,
+      "evidence": "The agent did not proceed to execute the user's actual task. Instead, it bootstrapped the missing infrastructure first (AGENTS.md, docs/, scripts/, harness/) and noted it needs to 'restart from Step 1' of the harness-executor workflow, indicating it correctly paused task execution until the infrastructure was in place."
+    },
+    {
+      "text": "offers_options",
+      "passed": false,
+      "evidence": "The summary shows the agent directly invoked harness-creator and completed the bootstrap without mentioning that it offered the user a choice between invoking harness-creator or explaining the limitations of proceeding without it. There is no evidence of presenting options to the user."
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+    "configurations": [
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:harness-simple}/creator-test/markdown-tool-bare",
+            "name": "Debug MarkdownPreview (creator-test/markdown-tool-bare)",
+            "target": "MarkdownPreview",
+            "configuration": "debug",
+            "preLaunchTask": "swift: Build Debug MarkdownPreview (creator-test/markdown-tool-bare)"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:harness-simple}/creator-test/markdown-tool-bare",
+            "name": "Release MarkdownPreview (creator-test/markdown-tool-bare)",
+            "target": "MarkdownPreview",
+            "configuration": "release",
+            "preLaunchTask": "swift: Build Release MarkdownPreview (creator-test/markdown-tool-bare)"
+        }
+    ]
+}

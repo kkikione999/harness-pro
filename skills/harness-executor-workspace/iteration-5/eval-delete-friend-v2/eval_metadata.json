@@ -1,0 +1,16 @@
+{
+  "eval_id": 5,
+  "eval_name": "delete-friend-no-approval",
+  "prompt": "添加一个删除好友的功能，删除好友的话，双方的好友都同时删除",
+  "project_path": "/Users/josh_folder/hp-sleeper-test",
+  "assertions": [
+    {"name": "loads_context", "check": "Reads AGENTS.md and project docs before proceeding"},
+    {"name": "classifies_complexity", "check": "Explicitly classifies task as Simple, Medium, or Complex with justification"},
+    {"name": "creates_execution_plan", "check": "Creates an execution plan at docs/exec-plans/ with phases, invariants, scope DO/DON'T"},
+    {"name": "proceeds_without_approval", "check": "Does NOT stop to wait for human approval — proceeds directly from plan to execution"},
+    {"name": "delegates_to_subagent", "check": "Does NOT write code directly for Medium/Complex tasks — delegates to a sub-agent"},
+    {"name": "validates_after_execution", "check": "Runs validation pipeline (build, lint, or test) after code changes"},
+    {"name": "scope_stays_within_bounds", "check": "Only modifies files related to friend management"},
+    {"name": "completes_full_workflow", "check": "Reaches Step 7 (Complete) — produces a summary with validation results"}
+  ]
+}

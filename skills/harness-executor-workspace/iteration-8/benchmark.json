@@ -1,0 +1,73 @@
+{
+  "skill_name": "harness-executor",
+  "iteration": 8,
+  "timestamp": "2026-04-20",
+  "note": "First iteration using top-level claude -p sessions via harness-executor-tester.sh. Separate project copies to avoid contamination. Step 6+8 improvements from iteration 7 carried forward.",
+  "configurations": [
+    {
+      "name": "with_skill",
+      "evals": [{
+        "eval_id": 8, "eval_name": "sleep-reading-bug",
+        "pass_rate": 0.909, "assertions_total": 11, "assertions_passed": 10,
+        "duration_seconds": 921, "cost_usd": 2.55,
+        "assertions": [
+          {"text": "loads_context", "passed": true},
+          {"text": "reads_skill_references", "passed": true},
+          {"text": "classifies_complexity", "passed": true},
+          {"text": "creates_execution_plan", "passed": true},
+          {"text": "proceeds_without_approval", "passed": true},
+          {"text": "delegates_to_subagent", "passed": false},
+          {"text": "fixes_the_bug", "passed": true},
+          {"text": "runs_full_validation", "passed": true},
+          {"text": "writes_trace", "passed": true},
+          {"text": "writes_memory", "passed": true},
+          {"text": "completes_full_workflow", "passed": true}
+        ]
+      }],
+      "summary": {"total_assertions": 11, "total_passed": 10, "pass_rate": 0.909, "mean_duration_seconds": 921, "mean_cost_usd": 2.55}
+    },
+    {
+      "name": "without_skill",
+      "evals": [{
+        "eval_id": 8, "eval_name": "sleep-reading-bug",
+        "pass_rate": 0.273, "assertions_total": 11, "assertions_passed": 3,
+        "duration_seconds": 148, "cost_usd": 1.37,
+        "assertions": [
+          {"text": "loads_context", "passed": false},
+          {"text": "reads_skill_references", "passed": false},
+          {"text": "classifies_complexity", "passed": false},
+          {"text": "creates_execution_plan", "passed": false},
+          {"text": "proceeds_without_approval", "passed": true},
+          {"text": "delegates_to_subagent", "passed": false},
+          {"text": "fixes_the_bug", "passed": true},
+          {"text": "runs_full_validation", "passed": false},
+          {"text": "writes_trace", "passed": false},
+          {"text": "writes_memory", "passed": false},
+          {"text": "completes_full_workflow", "passed": false}
+        ]
+      }],
+      "summary": {"total_assertions": 11, "total_passed": 3, "pass_rate": 0.273, "mean_duration_seconds": 148, "mean_cost_usd": 1.37}
+    }
+  ],
+  "delta": {
+    "pass_rate_improvement": 0.636,
+    "duration_delta_seconds": 773,
+    "cost_delta_usd": 1.18,
+    "notes": "with_skill 3.3x pass rate (90.9% vs 27.3%). Both fixed the bug correctly. with_skill costs $2.55 vs $1.37 but produces: execution plan, full 5-step validation, trace, memory, git commit. delegates_to_subagent failed because task was correctly classified as Simple."
+  },
+  "progress_across_iterations": [
+    {"iteration": 3, "with_skill_pass_rate": 0.25, "without_skill_pass_rate": 0.083},
+    {"iteration": 4, "with_skill_pass_rate": 0.714, "without_skill_pass_rate": 0.286},
+    {"iteration": 5, "with_skill_pass_rate": 0.75, "without_skill_pass_rate": 0.375},
+    {"iteration": 6, "with_skill_pass_rate": 0.875, "without_skill_pass_rate": 0.375},
+    {"iteration": 7, "with_skill_pass_rate": 0.909, "without_skill_pass_rate": 0.273},
+    {"iteration": 8, "with_skill_pass_rate": 0.909, "without_skill_pass_rate": 0.273, "note": "Top-level sessions, separate projects, Step 6+8 validated"}
+  ],
+  "analyst_notes": [
+    "STABLE HIGH PASS RATE: 90.9% for second consecutive iteration. The skill improvements from iteration 7 (mandatory full pipeline + artifact requirements) are holding.",
+    "TOP-LEVEL SESSIONS WORK: Using claude -p with harness-executor-tester.sh produces clean, reproducible tests. Separate project copies (hp-sleeper-test-with_skill, hp-sleeper-test-without_skill) prevent contamination.",
+    "delegates_to_subagent NOTE: This assertion is N/A for Simple tasks. The agent correctly classified the 2-line bug fix as Simple and directly edited — this is proper skill behavior. To truly test delegation, we need a Medium/Complex task (e.g., 'add a new API endpoint with iOS support').",
+    "COST COMPARISON: with_skill $2.55 vs without_skill $1.37 — the skill adds ~$1.18 overhead for the structured workflow (context loading, validation pipeline, trace/memory writing). This seems reasonable for the quality improvement.",
+    "BUG FIX ACCURACY: Both agents correctly identified the root cause (inverted gte/lte operators) and fixed it identically. The skill doesn't improve bug-fixing accuracy but ensures the fix is validated and documented."
+  ]
+}

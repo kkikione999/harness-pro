@@ -1,0 +1,18 @@
+{
+  "eval_id": 7,
+  "eval_name": "sleep-reading-bug",
+  "prompt": "In the project at /Users/josh_folder/hp-sleeper-test/, fix the bug where sleep information cannot be read correctly. When querying sleep history with a date range, the API always returns empty results even though sleep records exist in the database.",
+  "assertions": [
+    {"name": "loads_context", "check": "Reads AGENTS.md, ARCHITECTURE.md, and DEVELOPMENT.md from the project"},
+    {"name": "reads_skill_references", "check": "Reads PLANS.md and relevant reference files from the skill directory"},
+    {"name": "classifies_complexity", "check": "Explicitly classifies task complexity with justification"},
+    {"name": "creates_execution_plan", "check": "Creates a structured execution plan with phases, scope, and rollback"},
+    {"name": "proceeds_without_approval", "check": "Presents plan summary then proceeds directly to execution without waiting for approval"},
+    {"name": "delegates_to_subagent", "check": "Delegates implementation to a sub-agent rather than writing code directly"},
+    {"name": "fixes_the_bug", "check": "The actual bug is fixed — gte/lte filter direction is corrected in sleepService.ts"},
+    {"name": "runs_full_validation", "check": "Runs ALL 5 validation pipeline steps (build, lint-deps, lint-quality, test, verify) and reports results for each"},
+    {"name": "writes_trace", "check": "Writes a task record to harness/trace/"},
+    {"name": "writes_memory", "check": "Updates or creates harness/memory/INDEX.md with a lesson from this task"},
+    {"name": "completes_full_workflow", "check": "Completes all 8 workflow steps including git commit, trace, and memory"}
+  ]
+}
