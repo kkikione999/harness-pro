@@ -15,11 +15,13 @@ struct MarkdownPreviewView: View {
                     .markdownTheme(.gitHub)
                     .frame(maxWidth: contentMaxWidth, alignment: .leading)
                     .textSelection(.enabled)
+                    .accessibilityIdentifier(AccessibilityID.MarkdownPreviewView.renderedContent)
                     .contextMenu {
                         Button("Copy Text") {
                             copyMarkdownText()
                         }
                     }
+                    .accessibilityIdentifier(AccessibilityID.MarkdownPreviewView.copyTextContextButton)
 
                 Spacer(minLength: 0)
             }

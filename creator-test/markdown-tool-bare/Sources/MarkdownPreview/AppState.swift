@@ -42,6 +42,7 @@ final class AppState: ObservableObject {
     @Published var errorMessage: String?
     @Published private(set) var windowTitle = "Markdown Preview"
     @Published var renderMode: MarkdownRenderMode = .rendered
+    @Published var theme: AppTheme = .system
 
     let watchEnabled: Bool
     private let filePollInterval: Duration

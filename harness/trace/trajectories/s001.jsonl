@@ -1,4 +1,0 @@
-{"ts": "2026-04-20T10:00:01Z", "session": "s001", "tool": "Bash", "cwd": "$PROJECT", "command": "cd backend && npm run build", "file": "", "response_preview": "build ok"}
-{"ts": "2026-04-20T10:00:05Z", "session": "s001", "tool": "Bash", "cwd": "$PROJECT", "command": "./scripts/lint-deps", "file": "", "response_preview": "No violations"}
-{"ts": "2026-04-20T10:00:08Z", "session": "s001", "tool": "Bash", "cwd": "$PROJECT", "command": "cd backend && npm test", "file": "", "response_preview": "87 tests passed"}
-{"ts": "2026-04-20T10:00:12Z", "session": "s001", "tool": "Write", "cwd": "$PROJECT", "command": "", "file": "$PROJECT/harness/trace/task.md", "response_preview": ""}

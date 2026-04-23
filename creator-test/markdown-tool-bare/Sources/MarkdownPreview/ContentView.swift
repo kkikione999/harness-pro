@@ -12,6 +12,7 @@ struct ContentView: View {
             content
         }
         .background(Color(nsColor: .windowBackgroundColor))
+        .preferredColorScheme(appState.theme.colorScheme)
         .dropDestination(for: URL.self) { urls, _ in
             handleDroppedFiles(urls)
         } isTargeted: { isTargeted in
@@ -53,12 +54,14 @@ struct ContentView: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text(appState.document?.url.lastPathComponent ?? "Markdown Preview")
                     .font(.title2.weight(.semibold))
+                    .accessibilityIdentifier(AccessibilityID.ContentView.headerTitle)
 
                 Text(appState.document?.url.path(percentEncoded: false) ?? "Open a Markdown file to preview it.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
                     .truncationMode(.middle)
+                    .accessibilityIdentifier(AccessibilityID.ContentView.headerPath)
             }
 
             Spacer()
@@ -70,16 +73,32 @@ struct ContentView: View {
             }
             .pickerStyle(.segmented)
             .frame(width: 240)
+            .accessibilityIdentifier(AccessibilityID.ContentView.renderModePicker)
+
+            Menu {
+                ForEach(AppTheme.allCases) { theme in
+                    Button {
+                        appState.theme = theme
+                    } label: {
+                        Label(theme.rawValue.capitalized, systemImage: theme.iconName)
+                    }
+                }
+            } label: {
+                Image(systemName: appState.theme.iconName)
+            }
+            .accessibilityIdentifier("ThemeToggle")
 
             Button("Reload") {
                 appState.reload()
             }
             .disabled(appState.document == nil)
+            .accessibilityIdentifier(AccessibilityID.ContentView.reloadButton)
 
             Button("Open File…") {
                 onOpenFile()
             }
             .keyboardShortcut("o", modifiers: [.command])
+            .accessibilityIdentifier(AccessibilityID.ContentView.openFileButton)
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 16)
@@ -103,6 +122,7 @@ struct ContentView: View {
             VStack(spacing: 14) {
                 Text("Drop in a Markdown file")
                     .font(.title2.weight(.semibold))
+                    .accessibilityIdentifier(AccessibilityID.ContentView.dropZoneLabel)
 
                 Text("This app previews Markdown files with preview, source, and split modes.")
                     .foregroundStyle(.secondary)
@@ -110,6 +130,7 @@ struct ContentView: View {
                 Button("Choose Markdown File…") {
                     onOpenFile()
                 }
+                .accessibilityIdentifier(AccessibilityID.ContentView.chooseFileButton)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }

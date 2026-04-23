@@ -33,6 +33,7 @@ struct ReadOnlyTextView: NSViewRepresentable {
         textView.delegate = context.coordinator
 
         scrollView.documentView = textView
+        scrollView.setAccessibilityIdentifier(AccessibilityID.SourceView.sourceText)
         update(textView: textView, context: context)
         return scrollView
     }
