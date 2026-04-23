@@ -65,30 +65,36 @@ cmd_advance() {
     exit 1
   fi
 
-  # 幂等：已完成则跳过
-  if jq -e --argjson s "$step" '.steps_completed | index($s)' "$STATE_FILE" > /dev/null 2>&1; then
-    echo "Step $step 已完成，跳过"
-    return 0
-  fi
-
-  local tmp
-  tmp=$(jq --argjson s "$step" --arg now "$(now)" \
-    '.steps_completed += [$s] | .current_step = $s | .updated_at = $now' \
-    "$STATE_FILE")
-
-  # 处理 key=value 参数
+  # 先处理 key=value 参数（即使步骤已完成也要更新）
+  local kv_tmp
+  kv_tmp=$(cat "$STATE_FILE")
   shift
   for arg in "$@"; do
     local key="${arg%%=*}"
     local val="${arg#*=}"
-    # 尝试解析为 JSON (数字/布尔/对象)，否则当字符串
     if echo "$val" | jq -e . > /dev/null 2>&1; then
-      tmp=$(jq --arg k "$key" --argjson v "$val" '.[$k] = $v' <<< "$tmp")
+      kv_tmp=$(jq --arg k "$key" --argjson v "$val" '.[$k] = $v' <<< "$kv_tmp")
     else
-      tmp=$(jq --arg k "$key" --arg v "$val" '.[$k] = $v' <<< "$tmp")
+      kv_tmp=$(jq --arg k "$key" --arg v "$val" '.[$k] = $v' <<< "$kv_tmp")
     fi
   done
 
+  # 幂等：已完成则只应用 key=value 更新，不重复推进步骤
+  if jq -e --argjson s "$step" '.steps_completed | index($s)' "$STATE_FILE" > /dev/null 2>&1; then
+    if [ "$kv_tmp" != "$(cat "$STATE_FILE")" ]; then
+      echo "$kv_tmp" > "$STATE_FILE"
+      echo "Step $step 已完成，key=value 已更新 → $STATE_FILE"
+    else
+      echo "Step $step 已完成，跳过"
+    fi
+    return 0
+  fi
+
+  # 推进步骤 + 写入 key=value
+  local tmp
+  tmp=$(jq --argjson s "$step" --arg now "$(now)" \
+    '.steps_completed += [$s] | .current_step = $s | .updated_at = $now' \
+    <<< "$kv_tmp")
   echo "$tmp" > "$STATE_FILE"
   echo "Step $step 完成 → $STATE_FILE"
 }
