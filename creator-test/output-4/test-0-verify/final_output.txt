@@ -1,4 +1,0 @@
-Swift version: **6.2.1**
-- Driver version: 1.127.14.1
-- clang: 1700.4.4.1
-- Target: arm64-apple-macosx15.0

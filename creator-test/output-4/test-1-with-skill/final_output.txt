@@ -1,3 +1,0 @@
-文件中没有找到 'markdwon' 这个拼写错误。`Sources/MarkdownPreview/MarkdownFileType.swift` 第4行的 `allowedFilenameExtensions` 数组中已经正确拼写为 `["md", "markdown", "mdown", "mkd", "mkdn"]`。
-
-这个拼写错误可能已经被修复了，或者在不同的文件中。请确认具体是哪个文件包含该错误。

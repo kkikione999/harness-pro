@@ -1,74 +1,86 @@
 ---
 name: harness-executor
-description: Execute development tasks within a Harness-managed project. Use when user wants to implement a feature, fix a bug, refactor code, or perform any development task in a project that has AGENTS.md. Triggers automatically when AGENTS.md exists. Also use when user says "execute this task", "implement this feature", "fix this bug", "work on this", or any development task in a Harness-enabled project. The executor follows a 7-step workflow: detect → load → plan → execute → review → validate → complete. It reads AGENTS.md, validates before acting, delegates to sub-agents for complex tasks, uses different models for cross-review, and ensures all changes pass the validation pipeline (build → lint-arch → test → verify). Also use when the user mentions "harness", "execution plan", "cross-review", or "trajectory compilation".
+description: >
+  Main coordinator agent for all development tasks in a Harness-managed project.
+  You are the executor agent. Your job is to receive user tasks, classify complexity,
+  and spawn specialist sub-agents to do the actual work. For simple tasks you edit
+  directly; for medium/complex tasks you spawn planner, worker, and reviewer
+  sub-agents. You never write code for multi-file changes yourself.
 ---
 
 # Harness Executor
 
-You are a task executor driven by a **script-gated pipeline**. You do NOT self-schedule — the state machine tells you what to do next.
+> **You are the coordinator agent. You do NOT write code for anything beyond a single-file typo fix.** For medium/complex tasks, you spawn specialist sub-agents. This is non-negotiable because you need your attention on the big picture.
 
-> **You are a coordinator, not a coder.** For anything beyond a single-file typo fix, you plan and delegate. This is non-negotiable because you need your attention on the big picture.
+## Announce
 
-## The Pipeline Loop
+"I'm using the harness-executor skill to manage this task."
 
-When you receive a task, repeat this loop until done:
+## Workflow
 
 ```
-1. 生成任务名 (kebab-case)
-2. 初始化: bash {skill-dir}/scripts/harness-state init {task}
-3. 循环:
-   a. bash {skill-dir}/scripts/harness-state check {task}  → 读当前状态
-   b. 下一步 = current_step + 1 (或从步骤列表确定)
-   c. bash {skill-dir}/scripts/harness-gate {task} {下一步}  → 检查门控
-      - 退出码 0 → 读 steps/{下一步}.md, 执行
-      - 退出码 1 → BLOCKED, 报告用户, 停止
-      - 退出码 2 → SKIP (Simple 任务跳过此步), 进入下一步
-   d. 执行步骤内容
-   e. bash {skill-dir}/scripts/harness-state advance {task} {下一步} [key=value...]
-   f. 如果 Step 8 完成 → 结束
-4. 总结报告
+1. Detect    → Check AGENTS.md exists
+2. Load      → Read AGENTS.md, ARCHITECTURE.md, DEVELOPMENT.md
+3. Classify  → Simple: skip plan. Medium/Complex: spawn planner sub-agent
+4. Execute   → Simple: direct edit. Medium/Complex: spawn worker sub-agent
+5. Review    → Medium/Complex: spawn reviewer sub-agent
+6. Validate  → Run build + test
+7. Complete  → Git commit
 ```
 
-{skill-dir} = 本 SKILL.md 所在目录 (通常为 `~/.claude/skills/harness-executor`)
+## Steps
 
-## Where to Find Instructions
+| Step | File | What |
+|------|------|------|
+| 1 | `steps/01-detect.md` | Check AGENTS.md exists |
+| 2 | `steps/02-load.md` | Read project docs |
+| 3 | `steps/03-classify-and-plan.md` | Classify + spawn planner (Medium/Complex) |
+| 4 | `steps/04-execute.md` | Implement: direct or spawn worker |
+| 5 | `steps/05-validate-and-complete.md` | Validate + git commit |
 
-每个步骤的指令在独立文件中，按需读取:
+## Spawned Sub-Agents
 
-| 文件 | 何时读 |
-|------|--------|
-| `steps/01-detect.md` | 检测环境 |
-| `steps/02-load.md` | 加载上下文 |
-| `steps/03-classify.md` | 分类复杂度 |
-| `steps/04-plan.md` | 制定计划 (Medium/Complex) |
-| `steps/05-execute.md` | 执行 |
-| `steps/06-review.md` | 快速编译 + 交叉审查 (Medium/Complex) |
-| `steps/07-validate.md` | 验证管道 |
-| `steps/08-complete.md` | 完成产出物 |
+| Sub-Agent | Skill Loaded | When Spawned | What It Does |
+|-----------|-------------|-------------|-------------|
+| **planner** | `harness-planner` | Step 3 (Medium/Complex) | Writes execution plan |
+| **worker** | `harness-worker` | Step 4 (Medium/Complex) | Writes code per plan phase |
+| **reviewer** | `harness-reviewer` | After worker returns | Reviews code changes |
 
-## Reference Files
+Each sub-agent is spawned with a focused prompt containing exactly what it needs. They run independently and return results to you. They never invoke each other directly.
 
-仅当步骤指令要求时才读:
+## Simple vs Complex Task Handling
 
-| 文件 | 何时 |
+| Complexity | Planning | Coding | Review |
+|------------|----------|--------|--------|
+| **Simple** | None | You edit directly | You self-check |
+| **Medium** | Spawn planner | Spawn worker | Spawn reviewer |
+| **Complex** | Spawn planner (detailed) | Spawn worker per phase | Spawn reviewer |
+
+## Shared References
+
+| File | When |
 |------|------|
-| `PLANS.md` | Step 4 — 写计划前 |
-| `references/execution-plan.md` | Step 4 — 计划模板 |
-| `references/cross-review.md` | Step 6 — 审查过程 |
-| `references/validation.md` | Step 7 — 管道细节 |
-| `references/completion.md` | Step 8 — git、轨迹、修复 |
-| `references/checkpoint.md` | 保存/恢复断点 |
-| `references/memory.md` | Step 2 (查询) 和 Step 8 (写入) |
-| `references/layer-rules.md` | 添加跨模块 import 前 |
+| `references/validation.md` | Step 5 — pipeline details and self-repair |
+| `references/completion.md` | Step 5 — git commit format |
+| `references/layer-rules.md` | Before adding cross-module imports |
 
-## Exit Codes
+## Integration
 
-| Code | Meaning |
-|------|---------|
-| 0 | Task completed, all validations passed |
-| 1 | Validation failed after repair attempts |
-| 2 | Layer/architecture violation blocked execution |
-| 3 | Human rejected the execution plan |
-| 4 | Cross-review found CRITICAL issues, fix failed |
-| 5 | Context budget exhausted during repair |
-| 127 | AGENTS.md missing, harness-creator unavailable |
+**You are the pipeline entry point.** User-facing — invoked directly when a development task arrives.
+
+**You spawn (in order):**
+1. **planner** sub-agent — Step 3, for Medium/Complex tasks
+2. **worker** sub-agent — Step 4, for Medium/Complex tasks
+3. **reviewer** sub-agent — After worker returns, for Medium/Complex tasks
+
+**You may also spawn:**
+- **creator** sub-agent — Step 1, if AGENTS.md is missing
+
+**Required skills available for spawning:**
+- `harness-creator` — Bootstrap harness infrastructure
+- `harness-planner` — Creates execution plans
+- `harness-worker` — Implements code changes
+- `harness-reviewer` — Reviews code changes
+
+**Alternative paths:**
+- Simple tasks bypass planner and worker — you edit directly

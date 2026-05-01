@@ -1,8 +1,0 @@
-已完成。在 `AppDelegate.swift` 顶部添加了 `// MARK: - AppDelegate` 注释。
-
-修改后的文件开头：
-```swift
-// MARK: - AppDelegate
-import AppKit
-import Foundation
-```

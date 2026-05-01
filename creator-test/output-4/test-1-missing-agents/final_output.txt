@@ -1,7 +1,0 @@
-我在 `MarkdownFileType.swift` 中没有找到 "markdwon" 这个拼写错误。该文件第 4 行的内容是：
-
-```swift
-static let allowedFilenameExtensions = ["md", "markdown", "mdown", "mkd", "mkdn"]
-```
-
-其中 "markdown" 的拼写是正确的。请确认您要修复的文件路径或拼写错误是否正确？

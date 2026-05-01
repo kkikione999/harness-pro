@@ -1,8 +1,6 @@
 # Step 5: 输出报告
 
-> 门控: Step 4 完成。运行 `{skill-dir}/scripts/creator-pipeline gate 5` 确认。
-
-## 报告内容
+输出最终报告:
 
 ```markdown
 # Harness Creator 报告
@@ -11,7 +9,7 @@
 {initial/improve}
 
 ## 审计得分
-{原始得分}/100
+{得分}/100
 
 ## 生成的文件
 - AGENTS.md ✓/✗
@@ -20,7 +18,7 @@
 - scripts/lint-deps ✓/✗
 - scripts/lint-quality ✓/✗
 - scripts/validate.py ✓/✗
-- E2E 验证 ✓/✗ ({mode}: {路径})
+- E2E 验证 ✓/✗
 - harness/ ✓/✗
 
 ## 验证结果
@@ -29,14 +27,8 @@
 - validate.py: {PASS/FAIL/SKIP}
 
 ## 层级映射
-{layer_map 的可读形式}
+{layer_map 可读形式}
 
 ## 下一步建议
-- {根据缺失项给出的具体建议}
-```
-
-## 完成后
-
-```bash
-{skill-dir}/scripts/creator-pipeline advance 5
+- {根据缺失项给出具体建议}
 ```
