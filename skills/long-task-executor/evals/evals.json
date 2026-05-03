@@ -1,0 +1,73 @@
+{
+  "skill_name": "long-task-executor",
+  "evals": [
+    {
+      "id": 1,
+      "name": "feature-todo-app-with-tests",
+      "prompt": "I want you to build a small TODO app for me. It should be a single Node.js script (no dependencies beyond Node's built-in modules) that exposes an HTTP server on port 3000 with three endpoints: GET /todos returns all todos as JSON, POST /todos adds a todo (body: {text: string}), DELETE /todos/:id deletes one. Also write a separate test file that uses Node's built-in `node:test` module to cover the happy path and one error case (deleting a non-existent id should return 404). Save the server as `server.js` and the tests as `server.test.js` in the current directory. The Done conditions are: `node server.js` starts cleanly, `node --test server.test.js` passes, and a curl POST followed by GET returns the posted todo.",
+      "expected_output": "After this prompt, the skill should restate the requirement and WAIT for approval rather than diving straight into implementation. Once approved (the eval supplies a follow-up 'yes go ahead'), it should spawn plan-agent, then workers for the two files, run the reviewer, run the teammate (which should run the tests AND actually curl the server). Final files: server.js, server.test.js, and a plan file under docs/plans/ or similar.",
+      "files": [],
+      "assertions": [
+        {"id": 1, "text": "server.js file is present in outputs/"},
+        {"id": 2, "text": "server.test.js file is present in outputs/"},
+        {"id": 3, "text": "server.js uses only Node built-in modules (no external dependencies imported)"},
+        {"id": 4, "text": "server.js implements GET /todos endpoint returning JSON"},
+        {"id": 5, "text": "server.js implements POST /todos that validates body has text field"},
+        {"id": 6, "text": "server.js implements DELETE /todos/:id endpoint"},
+        {"id": 7, "text": "DELETE /todos/:id returns 404 for a non-existent id"},
+        {"id": 8, "text": "server.js listens on port 3000 when run directly"},
+        {"id": 9, "text": "server.test.js uses the node:test built-in module"},
+        {"id": 10, "text": "server.test.js covers the happy path (POST then GET returns the todo)"},
+        {"id": 11, "text": "server.test.js covers the 404 error case for DELETE on non-existent id"},
+        {"id": 12, "text": "node --test server.test.js passes when executed"},
+        {"id": 13, "text": "node server.js starts without errors (no syntax/runtime crash on boot)"},
+        {"id": 14, "text": "Pipeline artifact: restatement.md is present and restates the user goal"},
+        {"id": 15, "text": "Pipeline artifact: plan.md is present with phased plan"},
+        {"id": 16, "text": "Pipeline artifact: review.md is present and the final verdict is PASS"},
+        {"id": 17, "text": "Pipeline artifact: verification.md is present and confirms tests pass"}
+      ]
+    },
+    {
+      "id": 2,
+      "name": "ambiguous-refactor",
+      "prompt": "The pricing logic in this codebase is a mess — it's spread across like 4 files and there are duplicated tax calculations everywhere. Can you clean it up? Just want it to be cleaner.",
+      "expected_output": "This prompt is intentionally vague. The skill should NOT immediately start refactoring. It should restate what it understood and ask clarifying questions about scope (which files? what does 'cleaner' mean? is there a specific file structure in mind?). It should explicitly NOT proceed to plan-agent until the user clarifies and approves a concrete restatement.",
+      "files": [],
+      "assertions": [
+        {"id": 1, "text": "Outputs include a refactored 'after' state with pricing-related code"},
+        {"id": 2, "text": "transcript.md (or restatement.md) explicitly acknowledges that no real codebase existed in the work directory"},
+        {"id": 3, "text": "Tax-rate or tax-calculation logic appears in only ONE centralized location in the after state (no duplication remains)"},
+        {"id": 4, "text": "Other pricing concerns (subtotal, discounts, shipping) are also extracted into reusable units rather than repeated"},
+        {"id": 5, "text": "At least one test or verification step exercises the refactored pricing logic and passes"},
+        {"id": 6, "text": "Caller files are updated to use the centralized pricing module rather than re-implementing logic inline"},
+        {"id": 7, "text": "Pipeline artifact: restatement.md is present and surfaces the ambiguity (missing codebase, vague Done condition) to the user"},
+        {"id": 8, "text": "Pipeline artifact: plan.md is present with a phased plan that includes 'before' setup and refactoring phases"},
+        {"id": 9, "text": "Pipeline artifact: review.md is present and the final verdict is PASS"},
+        {"id": 10, "text": "Pipeline artifact: verification.md is present and confirms behavior was preserved (e.g., before vs. after produce identical pricing for sample inputs)"}
+      ]
+    },
+    {
+      "id": 3,
+      "name": "small-cli-tool",
+      "prompt": "Write me a simple CLI in Python called wc-words.py that takes a filename as its first argument and prints the number of unique words (case-insensitive, split on whitespace) on stdout. If the file doesn't exist, exit 1 with a friendly error message. Add a tiny test file using pytest. Stop and confirm with me before you start coding.",
+      "expected_output": "User explicitly asked for the approval gate ('Stop and confirm with me before you start coding'), so the skill should restate the requirement, gate, then on approval go through the full plan→worker→review→teammate→commit-gate pipeline. Teammate should actually run the CLI on a real file. Files produced: wc-words.py, test_wc_words.py, plan file.",
+      "files": [],
+      "assertions": [
+        {"id": 1, "text": "Approval gate respected: agent stopped and produced a restatement before writing any code (restatement.md or equivalent in outputs/)"},
+        {"id": 2, "text": "Restatement surfaces at least one substantive ambiguity for user input (e.g., punctuation handling, exit-code expectations)"},
+        {"id": 3, "text": "wc-words.py is present in outputs/ (or work/ if approval-gated)"},
+        {"id": 4, "text": "wc-words.py reads filename from sys.argv (first positional argument)"},
+        {"id": 5, "text": "wc-words.py exits with code 1 and prints a friendly message when the file does not exist"},
+        {"id": 6, "text": "wc-words.py is case-insensitive (uses .lower() or equivalent before counting)"},
+        {"id": 7, "text": "wc-words.py splits on whitespace (uses .split() with no argument or equivalent)"},
+        {"id": 8, "text": "wc-words.py prints only the unique word count to stdout"},
+        {"id": 9, "text": "A pytest test file is present (test_*.py or *_test.py)"},
+        {"id": 10, "text": "Test file uses pytest conventions and includes at least one happy-path and one missing-file test"},
+        {"id": 11, "text": "pytest passes when executed against the produced files (if files were produced)"},
+        {"id": 12, "text": "Pipeline artifact: plan.md is present with a phased plan (with_skill condition)"},
+        {"id": 13, "text": "Pipeline artifact: review.md is present and the final verdict is PASS (with_skill condition)"},
+        {"id": 14, "text": "Pipeline artifact: verification.md is present and confirms tests pass (with_skill condition)"}
+      ]
+    }
+  ]
+}

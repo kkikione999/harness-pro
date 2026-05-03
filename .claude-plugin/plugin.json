@@ -1,0 +1,12 @@
+{
+  "name": "harness-pro-plugin",
+  "version": "1.0.0",
+  "description": "Coordinator skill for long, multi-step development tasks. Orchestrates plan-agent, worker, reviewer, and teammate through an 8-step pipeline: read context, restate requirement, approval gate, plan, dispatch workers, review loop, E2E verification, conditional commit.",
+  "author": {
+    "name": "josh-folder"
+  },
+  "license": "MIT",
+  "keywords": ["orchestration", "planning", "code-review", "e2e", "workflow", "harness-engineering"],
+  "skills": "./skills/",
+  "agents": ["./agents/plan-agent.md", "./agents/worker.md", "./agents/reviewer.md", "./agents/teammate.md"]
+}
