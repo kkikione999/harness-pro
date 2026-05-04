@@ -28,11 +28,17 @@ from utell_ios.preview_loader import (
 
 
 def _tool_error_guard(fn):
-    """Decorator that catches exceptions and returns a standard error dict."""
+    """Decorator that catches exceptions and returns a standard error dict.
+
+    Also checks for degraded-mode configuration before executing the tool.
+    """
     import functools
 
     @functools.wraps(fn)
     def wrapper(*args, **kwargs):
+        config_error = _require_config()
+        if config_error:
+            return {"success": False, "error": config_error}
         try:
             return fn(*args, **kwargs)
         except Exception as exc:
@@ -66,15 +72,13 @@ def _get_bridge() -> IOSBridgeClient:
     """Return the lazily-created singleton ``IOSBridgeClient``."""
     global _bridge
     if _bridge is None:
-        bundle_id = os.environ.get("UTELL_BUNDLE_ID", "")
-        if not bundle_id:
+        if not _bundle_id:
             raise EnvironmentError(
-                "UTELL_BUNDLE_ID environment variable is required"
+                "UTELL_BUNDLE_ID is not configured. "
+                "Set it in the plugin's userConfig or MCP env block."
             )
-        host = os.environ.get("UTELL_WDA_HOST", "127.0.0.1")
-        port = int(os.environ.get("UTELL_WDA_PORT", "8100"))
         _bridge = IOSBridgeClient(
-            bundle_id=bundle_id, host=host, port=port,
+            bundle_id=_bundle_id, host=_wda_host, port=int(_wda_port),
         )
     return _bridge
 
@@ -88,10 +92,24 @@ def _get_preview_orchestrator() -> PreviewOrchestrator:
 
 
 # ---------------------------------------------------------------------------
-# MCP server instance
+# MCP server instance & runtime config
 # ---------------------------------------------------------------------------
 
 mcp = FastMCP("utell-ios")
+
+_bundle_id: str = ""
+_wda_host: str = "127.0.0.1"
+_wda_port: str = "8100"
+
+
+def _require_config() -> str | None:
+    """Return an error message if the server is in degraded mode, else None."""
+    if not _bundle_id:
+        return (
+            "utell-ios is not configured. Set UTELL_BUNDLE_ID in plugin settings "
+            "(e.g., via the plugin's userConfig or MCP env block) to enable iOS tools."
+        )
+    return None
 
 
 # ---------------------------------------------------------------------------
@@ -823,29 +841,37 @@ def ios_smoke_test(include_interaction: bool = False) -> dict[str, Any]:
 
 
 def main() -> None:
-    """Start the utell-ios MCP server on stdio transport."""
-    missing = []
-    if not os.environ.get("UTELL_BUNDLE_ID"):
-        missing.append("UTELL_BUNDLE_ID")
-    if missing:
+    """Start the utell-ios MCP server on stdio transport.
+
+    If UTELL_BUNDLE_ID is not set, the server starts in degraded mode —
+    tools are registered but return a configuration error when called.
+    This prevents a hard crash from breaking the entire MCP subsystem.
+    """
+    global _bundle_id, _wda_host, _wda_port  # noqa: PLW0603
+
+    _bundle_id = os.environ.get("UTELL_BUNDLE_ID", "")
+    _wda_host = os.environ.get("UTELL_WDA_HOST", "127.0.0.1")
+    _wda_port = os.environ.get("UTELL_WDA_PORT", "8100")
+
+    if not _bundle_id:
         print(
-            f"Error: Required environment variable(s) not set: {', '.join(missing)}.\n"
-            "Configure them in the plugin's userConfig section (e.g., in Claude Code settings).",
+            "[utell-ios] WARNING: UTELL_BUNDLE_ID is not set. "
+            "Server starting in degraded mode — tools will return config errors. "
+            "Set UTELL_BUNDLE_ID in plugin settings to enable full functionality.",
             file=sys.stderr,
         )
-        sys.exit(1)
 
-    host = os.environ.get("UTELL_WDA_HOST", "127.0.0.1")
-    port = os.environ.get("UTELL_WDA_PORT", "8100")
     platform_check = _check_platform()
-    print(
-        f"[utell-ios] Starting server — bundle: {os.environ['UTELL_BUNDLE_ID']}, "
-        f"WDA: {host}:{port}",
-        file=sys.stderr,
-    )
-    if not platform_check["supported"]:
+    if platform_check["supported"]:
+        print(
+            f"[utell-ios] Starting server — bundle: {_bundle_id or '(not configured)'}, "
+            f"WDA: {_wda_host}:{_wda_port}",
+            file=sys.stderr,
+        )
+    else:
         for issue in platform_check["issues"]:
             print(f"[utell-ios] WARNING: {issue}", file=sys.stderr)
+
     mcp.run(transport="stdio")
 
 

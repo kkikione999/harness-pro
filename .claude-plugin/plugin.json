@@ -1,6 +1,6 @@
 {
   "name": "harness-pro-plugin",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "Coordinator skill for long, multi-step development tasks. Orchestrates plan-agent, worker, reviewer, and e2e-runner through an 8-step pipeline. Bundles utell-ios MCP server for iOS simulator automation.",
   "author": {
     "name": "josh-folder"
@@ -11,7 +11,35 @@
   "mcpServers": {
     "utell-ios": {
       "command": "bash",
-      "args": ["${CLAUDE_PLUGIN_ROOT}/mcp/utell-ios/run.sh"]
+      "args": ["${CLAUDE_PLUGIN_ROOT}/mcp/utell-ios/run.sh"],
+      "env": {
+        "UTELL_BUNDLE_ID": "${userConfig.UTELL_BUNDLE_ID}",
+        "UTELL_WDA_HOST": "${userConfig.UTELL_WDA_HOST}",
+        "UTELL_WDA_PORT": "${userConfig.UTELL_WDA_PORT}"
+      }
+    }
+  },
+  "userConfig": {
+    "UTELL_BUNDLE_ID": {
+      "type": "string",
+      "title": "iOS Bundle ID",
+      "description": "The bundle identifier of the iOS app to automate (e.g., com.example.MyApp). Required for iOS simulator tools.",
+      "default": "",
+      "required": false
+    },
+    "UTELL_WDA_HOST": {
+      "type": "string",
+      "title": "WDA Host",
+      "description": "WebDriverAgent host address. Defaults to 127.0.0.1.",
+      "default": "127.0.0.1",
+      "required": false
+    },
+    "UTELL_WDA_PORT": {
+      "type": "string",
+      "title": "WDA Port",
+      "description": "WebDriverAgent port. Defaults to 8100.",
+      "default": "8100",
+      "required": false
     }
   }
 }
