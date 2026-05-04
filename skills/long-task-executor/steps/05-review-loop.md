@@ -53,7 +53,7 @@ Do not refactor. Do not "improve" code that wasn't flagged.
 # Post-conditions
 - Each flagged issue is resolved
 - No new files outside the originally-changed set
-- Tests still pass (or fail no more than before — teammate will verify later)
+- Tests still pass (or fail no more than before — e2e-runner will verify later)
 ```
 
 ## When to escalate instead of looping

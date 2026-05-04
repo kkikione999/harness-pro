@@ -62,7 +62,7 @@ Don't silently let the worker improvise around plan failures.
 
 ## After all workers return
 
-Move to Step 5 (review loop). Don't run tests yet — that's the teammate's job in Step 6, after the reviewer is satisfied.
+Move to Step 5 (review loop). Don't run tests yet — that's the e2e-runner's job in Step 6, after the reviewer is satisfied.
 
 ## Edge cases
 

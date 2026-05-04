@@ -79,7 +79,7 @@ Write the plan to the specified path. Use this exact structure:
 - <patterns the workers must not introduce>
 
 ## Test/verify command
-<the exact command(s) the teammate will run later>
+<the exact command(s) the e2e-runner will run later>
 ```
 
 ## Plan Quality Checklist
@@ -117,4 +117,4 @@ Return to the orchestrator:
 - Writing prose like "the worker should consider…" — workers don't consider, they implement. Be concrete.
 - Phases that say "implement the feature" without specifying files — that's a placeholder, not a plan.
 - A "miscellaneous" or "cleanup" final phase — fold any cleanup into the phases that need it, or drop it.
-- Plans that don't include a verify command — without one, the teammate can't confirm "done."
+- Plans that don't include a verify command — without one, the e2e-runner can't confirm "done."

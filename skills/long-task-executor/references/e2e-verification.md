@@ -1,10 +1,10 @@
 # User-Perspective E2E Verification
 
-The teammate's job is to confirm the system actually delivers the user's goal, not just that the code compiles and unit tests pass. This document spells out what that means for different project types.
+The e2e-runner's job is to confirm the system actually delivers the user's goal, not just that the code compiles and unit tests pass. This document spells out what that means for different project types.
 
 ## The principle
 
-Test the user-facing contract from the user's side. If the user is a person clicking a UI, the teammate clicks the UI. If the user is another service, the teammate makes the same kind of HTTP/RPC call that service would. The teammate should never reach into internal modules to "verify" something — that's the unit test's job, and it's already been done.
+Test the user-facing contract from the user's side. If the user is a person clicking a UI, the e2e-runner clicks the UI. If the user is another service, the e2e-runner makes the same kind of HTTP/RPC call that service would. The e2e-runner should never reach into internal modules to "verify" something — that's the unit test's job, and it's already been done.
 
 ## By project type
 
@@ -12,7 +12,7 @@ Test the user-facing contract from the user's side. If the user is a person clic
 - Start the dev server (`pnpm dev`, `npm run dev`, etc.)
 - Open the page in a real browser via the playwright/chrome-devtools MCP if available
 - Click through the user flow described in the requirement
-- For each "Done when" condition, take a screenshot or describe what the teammate observed
+- For each "Done when" condition, take a screenshot or describe what the e2e-runner observed
 - Watch the browser console for errors that might not surface in unit tests
 
 ### Backend API
@@ -40,7 +40,7 @@ Test the user-facing contract from the user's side. If the user is a person clic
 
 ## What "PASS" actually requires
 
-For each "Done when" condition from the approved restatement, the teammate must produce **observable evidence**:
+For each "Done when" condition from the approved restatement, the e2e-runner must produce **observable evidence**:
 
 - "Test suite passes": full test command output showing 0 failures
 - "Dashboard loads in under 500ms": measured time from a real browser load
@@ -49,17 +49,17 @@ For each "Done when" condition from the approved restatement, the teammate must 
 
 "It looks like it works" is not evidence. "I'd expect it to work" is not evidence.
 
-## What a teammate should NOT do
+## What a e2e-runner should NOT do
 
-- **Don't fix bugs.** The teammate is a verifier, not an implementer. If it finds a bug, it returns FAIL with the bug description, and the orchestrator routes back to the review loop.
-- **Don't read the source to figure out what should happen.** The teammate goes by the approved restatement. If the restatement is ambiguous, the teammate should report that ambiguity, not guess.
+- **Don't fix bugs.** The e2e-runner is a verifier, not an implementer. If it finds a bug, it returns FAIL with the bug description, and the orchestrator routes back to the review loop.
+- **Don't read the source to figure out what should happen.** The e2e-runner goes by the approved restatement. If the restatement is ambiguous, the e2e-runner should report that ambiguity, not guess.
 - **Don't stop at the first failure.** Run all the verification steps; the orchestrator wants the full picture, not just the first broken thing.
 
 ## When E2E genuinely can't be done
 
-Some changes don't have a runnable E2E (e.g., pure refactoring with no behavioral change). The teammate should still:
+Some changes don't have a runnable E2E (e.g., pure refactoring with no behavioral change). The e2e-runner should still:
 - Run the test suite
 - Run any type-check / lint / build steps
 - Confirm the diff doesn't change observable behavior (per the plan's "Done when")
 
-If the change is "no observable behavior should change", that itself is the contract; the teammate verifies by checking that pre-existing E2E tests still pass with the same outputs.
+If the change is "no observable behavior should change", that itself is the contract; the e2e-runner verifies by checking that pre-existing E2E tests still pass with the same outputs.

@@ -75,7 +75,7 @@ This is the dimension most reviewers miss. Look for:
 
 | Grade | Meaning | Orchestrator action |
 |-------|---------|---------------------|
-| **PASS** | No significant issues | Proceed to teammate verification |
+| **PASS** | No significant issues | Proceed to E2E verification |
 | **MEDIUM** | Issues worth noting but acceptable | Note them, proceed |
 | **HIGH** | Issues that should be fixed | Re-spawn worker on the flagged items |
 | **CRITICAL** | Fundamental problems (wrong logic, broken plan compliance, architecture violation) | Re-spawn worker; consider re-planning if structural |

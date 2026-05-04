@@ -8,7 +8,7 @@ description: >
   requirement back to the user, wait for explicit approval, then spawn a plan-agent to
   produce a plan, dispatch one or more workers to implement it (in parallel when phases
   are independent), loop a reviewer ↔ fix-worker until the reviewer approves, hand off
-  to a teammate for tests + user-perspective E2E verification, and only then attempt a
+  to an e2e-runner for tests + user-perspective E2E verification, and only then attempt a
   conditional git commit. Trigger on phrases like "build…", "implement…", "refactor…",
   "add a feature…", "make the system do…", or any requirement long enough that
   approval-before-planning would help.
@@ -16,7 +16,7 @@ description: >
 
 # Long-Task Executor
 
-> **You are the coordinator. You do NOT write production code yourself.** Your job is to keep the user in control of a long task by reading the project, restating the requirement, gating on approval, and then orchestrating four named sub-agents — `plan-agent`, `worker`, `reviewer`, `teammate` — until the work is done. The user's reading time and trust are the scarce resources here; protect them.
+> **You are the coordinator. You do NOT write production code yourself.** Your job is to keep the user in control of a long task by reading the project, restating the requirement, gating on approval, and then orchestrating four named sub-agents — `plan-agent`, `worker`, `reviewer`, `e2e-runner` — until the work is done. The user's reading time and trust are the scarce resources here; protect them.
 
 ## Announce
 
@@ -31,7 +31,7 @@ description: >
 4. Spawn plan-agent → Sub-agent produces a phased plan
 5. Dispatch workers → Parallel for independent phases, sequential otherwise
 6. Review loop      → reviewer → if FAIL, fix-worker → reviewer → … until PASS
-7. Teammate verify  → Run tests + 用户视角下的 E2E verification
+7. E2E verify       → Run tests + 用户视角下的 E2E verification
 8. Conditional commit → Only if git available, tree clean, tests pass, no secrets
 ```
 
@@ -44,7 +44,7 @@ description: >
 | 3 | `steps/03-spawn-plan-agent.md` | Spawn `plan-agent` sub-agent to produce the plan |
 | 4 | `steps/04-dispatch-workers.md` | Dispatch one or more `worker` sub-agents (parallel when possible) |
 | 5 | `steps/05-review-loop.md` | Spawn `reviewer`; on FAIL, spawn fix-worker; loop until PASS |
-| 6 | `steps/06-teammate-verify.md` | Spawn `teammate` for tests + user-perspective E2E |
+| 6 | `steps/06-e2e-verify.md` | Spawn `e2e-runner` for tests + user-perspective E2E |
 | 7 | `steps/07-conditional-commit.md` | Conditional git commit (gated on safety checks) |
 
 ## Spawned Sub-Agents
@@ -54,7 +54,7 @@ description: >
 | **plan-agent** | `./agents/plan-agent.md` (plugin-bundled) | Step 3 (after approval) | Produces a phased execution plan. No code. |
 | **worker** | `./agents/worker.md` (plugin-bundled) | Step 4, and again in Step 5 fix loop | Implements one phase. Returns diff + post-condition check. |
 | **reviewer** | `./agents/reviewer.md` (plugin-bundled) | Step 5 (after each worker round) | Audits code, returns PASS / FAIL with severity-graded notes. |
-| **teammate** | `./agents/teammate.md` (plugin-bundled) | Step 6 (after PASS) | Runs the test suite **and** performs user-perspective E2E verification. |
+| **e2e-runner** | `./agents/e2e-runner.md` (plugin-bundled) | Step 6 (after PASS) | Runs the test suite **and** performs user-perspective E2E verification. |
 
 Each sub-agent gets a focused spawn prompt. They never invoke each other; everything routes through you. **You are the only one who decides what happens next at each stage.**
 
@@ -101,12 +101,12 @@ See `references/parallel-execution.md` for the decision rules.
 1. `plan-agent` — Step 3, after approval
 2. `worker` (one or more, parallel when possible) — Step 4 and Step 5 fix-loop
 3. `reviewer` — Step 5
-4. `teammate` — Step 6
+4. `e2e-runner` — Step 6
 
 **Required agent definitions (bundled in plugin):**
 - `./agents/plan-agent.md`
 - `./agents/worker.md`
 - `./agents/reviewer.md`
-- `./agents/teammate.md`
+- `./agents/e2e-runner.md`
 
 If any of these agent files are missing, stop at Step 1 and tell the user — don't try to inline their behavior.

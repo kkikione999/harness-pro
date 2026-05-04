@@ -13,7 +13,7 @@ Goal: build a working understanding of the project and the user's request before
 
 - **Project root** — usually the cwd, but verify by looking for marker files (`.git`, `package.json`, `go.mod`, `pyproject.toml`, etc.)
 - **Tech stack** — language, framework, test runner, build tool
-- **Existing test command** — extract from `package.json`, `Makefile`, or CLAUDE.md so the teammate has it later
+- **Existing test command** — extract from `package.json`, `Makefile`, or CLAUDE.md so the e2e-runner has it later
 - **Whether git is available** — needed for Step 7's commit gate
 
 ## Output (internal, not yet shown to user)

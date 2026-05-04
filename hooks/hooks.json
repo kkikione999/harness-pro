@@ -1,0 +1,30 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/pre-push-simplify.sh\"",
+            "if": "Bash(git push*)",
+            "timeout": 10,
+            "statusMessage": "Checking if /simplify review is needed before push..."
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/scripts/install-lsp-deps.sh\"",
+            "timeout": 120,
+            "statusMessage": "Checking LSP dependencies..."
+          }
+        ]
+      }
+    ]
+  }
+}

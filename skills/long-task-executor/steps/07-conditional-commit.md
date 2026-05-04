@@ -10,7 +10,7 @@ All four must pass for an automatic commit. If any fails, surface the situation 
 |------|-------|-----|
 | 1. Git available | The project is a git repo and we can run git | `git rev-parse --is-inside-work-tree` returns `true` |
 | 2. Tree clean before & after the orchestrated changes | No unrelated dirty files or untracked junk | `git status --porcelain` shows only files this skill changed |
-| 3. Tests pass | The teammate reported tests PASS in Step 6 | Already in your context |
+| 3. Tests pass | The e2e-runner reported tests PASS in Step 6 | Already in your context |
 | 4. No secrets in the diff | No API keys, passwords, tokens, private keys | Pattern scan over the diff (see `references/commit-gating.md`) |
 
 ## How to commit (when all gates pass)

@@ -5,7 +5,7 @@
       "id": 1,
       "name": "feature-todo-app-with-tests",
       "prompt": "I want you to build a small TODO app for me. It should be a single Node.js script (no dependencies beyond Node's built-in modules) that exposes an HTTP server on port 3000 with three endpoints: GET /todos returns all todos as JSON, POST /todos adds a todo (body: {text: string}), DELETE /todos/:id deletes one. Also write a separate test file that uses Node's built-in `node:test` module to cover the happy path and one error case (deleting a non-existent id should return 404). Save the server as `server.js` and the tests as `server.test.js` in the current directory. The Done conditions are: `node server.js` starts cleanly, `node --test server.test.js` passes, and a curl POST followed by GET returns the posted todo.",
-      "expected_output": "After this prompt, the skill should restate the requirement and WAIT for approval rather than diving straight into implementation. Once approved (the eval supplies a follow-up 'yes go ahead'), it should spawn plan-agent, then workers for the two files, run the reviewer, run the teammate (which should run the tests AND actually curl the server). Final files: server.js, server.test.js, and a plan file under docs/plans/ or similar.",
+      "expected_output": "After this prompt, the skill should restate the requirement and WAIT for approval rather than diving straight into implementation. Once approved (the eval supplies a follow-up 'yes go ahead'), it should spawn plan-agent, then workers for the two files, run the reviewer, run the e2e-runner (which should run the tests AND actually curl the server). Final files: server.js, server.test.js, and a plan file under docs/plans/ or similar.",
       "files": [],
       "assertions": [
         {"id": 1, "text": "server.js file is present in outputs/"},
@@ -50,7 +50,7 @@
       "id": 3,
       "name": "small-cli-tool",
       "prompt": "Write me a simple CLI in Python called wc-words.py that takes a filename as its first argument and prints the number of unique words (case-insensitive, split on whitespace) on stdout. If the file doesn't exist, exit 1 with a friendly error message. Add a tiny test file using pytest. Stop and confirm with me before you start coding.",
-      "expected_output": "User explicitly asked for the approval gate ('Stop and confirm with me before you start coding'), so the skill should restate the requirement, gate, then on approval go through the full plan→worker→review→teammate→commit-gate pipeline. Teammate should actually run the CLI on a real file. Files produced: wc-words.py, test_wc_words.py, plan file.",
+      "expected_output": "User explicitly asked for the approval gate ('Stop and confirm with me before you start coding'), so the skill should restate the requirement, gate, then on approval go through the full plan→worker→review→e2e-runner→commit-gate pipeline. E2E-runner should actually run the CLI on a real file. Files produced: wc-words.py, test_wc_words.py, plan file.",
       "files": [],
       "assertions": [
         {"id": 1, "text": "Approval gate respected: agent stopped and produced a restatement before writing any code (restatement.md or equivalent in outputs/)"},
