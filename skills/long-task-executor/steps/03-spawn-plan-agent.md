@@ -19,7 +19,7 @@ Use the `Agent` tool with `subagent_type: "plan-agent"`. The spawn prompt should
 Example spawn prompt skeleton:
 
 ```
-You are the plan-agent. Load the agent definition at ~/.claude/agents/plan-agent.md.
+You are the plan-agent. Load the agent definition at ./agents/plan-agent.md (plugin-bundled).
 
 # Approved requirement
 [paste the restatement block]

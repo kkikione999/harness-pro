@@ -26,7 +26,7 @@ Use `Agent` with `subagent_type: "worker"`. The spawn prompt for each worker sho
 Example:
 
 ```
-You are a worker sub-agent. Load ~/.claude/agents/worker.md.
+You are a worker sub-agent. Load the agent definition at ./agents/worker.md (plugin-bundled).
 
 # Plan
 /path/to/plan.md

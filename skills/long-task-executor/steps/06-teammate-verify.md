@@ -19,7 +19,7 @@ Use `Agent` with `subagent_type: "teammate"`. Spawn prompt should include:
 Example:
 
 ```
-You are a teammate sub-agent. Load ~/.claude/agents/teammate.md.
+You are a teammate sub-agent. Load the agent definition at ./agents/teammate.md (plugin-bundled).
 
 # Approved requirement
 [paste restatement]

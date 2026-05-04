@@ -51,10 +51,10 @@ description: >
 
 | Sub-Agent | Agent Definition | When Spawned | What It Does |
 |-----------|-----------------|--------------|--------------|
-| **plan-agent** | `~/.claude/agents/plan-agent.md` | Step 3 (after approval) | Produces a phased execution plan. No code. |
-| **worker** | `~/.claude/agents/worker.md` | Step 4, and again in Step 5 fix loop | Implements one phase. Returns diff + post-condition check. |
-| **reviewer** | `~/.claude/agents/reviewer.md` | Step 5 (after each worker round) | Audits code, returns PASS / FAIL with severity-graded notes. |
-| **teammate** | `~/.claude/agents/teammate.md` | Step 6 (after PASS) | Runs the test suite **and** performs user-perspective E2E verification. |
+| **plan-agent** | `./agents/plan-agent.md` (plugin-bundled) | Step 3 (after approval) | Produces a phased execution plan. No code. |
+| **worker** | `./agents/worker.md` (plugin-bundled) | Step 4, and again in Step 5 fix loop | Implements one phase. Returns diff + post-condition check. |
+| **reviewer** | `./agents/reviewer.md` (plugin-bundled) | Step 5 (after each worker round) | Audits code, returns PASS / FAIL with severity-graded notes. |
+| **teammate** | `./agents/teammate.md` (plugin-bundled) | Step 6 (after PASS) | Runs the test suite **and** performs user-perspective E2E verification. |
 
 Each sub-agent gets a focused spawn prompt. They never invoke each other; everything routes through you. **You are the only one who decides what happens next at each stage.**
 
@@ -103,10 +103,10 @@ See `references/parallel-execution.md` for the decision rules.
 3. `reviewer` — Step 5
 4. `teammate` — Step 6
 
-**Required agent definitions:**
-- `~/.claude/agents/plan-agent.md`
-- `~/.claude/agents/worker.md`
-- `~/.claude/agents/reviewer.md`
-- `~/.claude/agents/teammate.md`
+**Required agent definitions (bundled in plugin):**
+- `./agents/plan-agent.md`
+- `./agents/worker.md`
+- `./agents/reviewer.md`
+- `./agents/teammate.md`
 
 If any of these agent files are missing, stop at Step 1 and tell the user — don't try to inline their behavior.

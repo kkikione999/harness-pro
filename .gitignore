@@ -1,1 +1,11 @@
 .DS_Store
+._*
+.venv/
+__pycache__/
+*.egg-info/
+*.pyc
+*.pyo
+dist/
+build/
+*.dylib
+*.so

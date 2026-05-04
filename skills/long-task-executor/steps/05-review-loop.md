@@ -35,10 +35,10 @@ The reviewer returns a graded result: **PASS** / **MEDIUM** / **HIGH** / **CRITI
 
 ## How to spawn the fix-worker
 
-Same agent definition (`~/.claude/agents/worker.md`), but the prompt is scoped to the reviewer's findings:
+Same agent definition (`./agents/worker.md` plugin-bundled), but the prompt is scoped to the reviewer's findings:
 
 ```
-You are a worker sub-agent. Load ~/.claude/agents/worker.md.
+You are a worker sub-agent. Load the agent definition at ./agents/worker.md (plugin-bundled).
 
 # Context
 This is a fix iteration. The reviewer flagged the following issues
