@@ -1,13 +1,13 @@
 {
   "name": "harness-pro-plugin",
   "version": "1.2.1",
-  "description": "Coordinator skill for long, multi-step development tasks. Orchestrates plan-agent, worker, reviewer, and e2e-runner through an 8-step pipeline. Bundles utell-ios MCP server for iOS simulator automation.",
+  "description": "Coordinator skill for long, multi-step development tasks. Orchestrates plan-agent, worker, reviewer, e2e-runner, and doc-updater through an 8-step pipeline. Bundles utell-ios MCP server for iOS simulator automation.",
   "author": {
     "name": "josh-folder"
   },
   "license": "MIT",
   "keywords": ["orchestration", "planning", "code-review", "e2e", "workflow", "harness-engineering", "ios", "simulator"],
-  "skills": ["./skills/long-task-executor"],
+  "skills": ["./skills/long-task-executor", "./skills/harness-pro-doctor"],
   "mcpServers": {
     "utell-ios": {
       "command": "bash",

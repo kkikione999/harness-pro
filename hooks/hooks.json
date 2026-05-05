@@ -14,17 +14,6 @@
         ]
       }
     ],
-    "SessionStart": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/scripts/install-lsp-deps.sh\"",
-            "timeout": 120,
-            "statusMessage": "Checking LSP dependencies..."
-          }
-        ]
-      }
-    ]
+    "SessionStart": []
   }
 }
