@@ -1,0 +1,20 @@
+{
+  "skill_name": "bdd-product-craft",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Add a comment feature to the article detail page where readers can post comments and the author can reply.",
+      "expected_output": "A Gherkin .feature file in docs/ covering happy path (post comment, reply), error paths (empty content, character limit), and edge cases. Uses business language, not technical implementation details."
+    },
+    {
+      "id": 2,
+      "prompt": "I need a user avatar upload feature. Users should be able to upload a profile picture, crop it, and see it on their profile page. Also need to handle cases where the file is too big or not an image.",
+      "expected_output": "A Gherkin .feature file in docs/ covering upload, crop, display on profile, file size error, and invalid file type error. Business-focused language."
+    },
+    {
+      "id": 3,
+      "prompt": "Build a dark mode toggle for the app. When the user clicks the moon icon in the header, the entire app should switch to a dark color scheme.",
+      "expected_output": "Skill should NOT trigger (pure visual change, no behavior change). If triggered, should decline or produce minimal output indicating this is a visual-only change."
+    }
+  ]
+}

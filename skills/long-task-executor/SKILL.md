@@ -1,36 +1,30 @@
 ---
 name: long-task-executor
 description: >
-  Coordinator skill for long, multi-step development tasks. Use this skill whenever the
-  user describes a non-trivial requirement (a feature, refactor, multi-file change, or
-  anything that will take more than one pass), even when they don't explicitly ask for
-  "planning" or "an executor". You read CLAUDE.md plus the conversation, restate the
-  requirement back to the user, wait for explicit approval, then spawn a plan-agent to
-  produce a plan, dispatch one or more workers to implement it (in parallel when phases
-  are independent), loop a reviewer ↔ fix-worker until the reviewer approves, hand off
-  to an e2e-runner for tests + user-perspective E2E verification, and only then attempt a
-  conditional git commit. Trigger on phrases like "build…", "implement…", "refactor…",
-  "add a feature…", "make the system do…", or any requirement long enough that
-  approval-before-planning would help.
+  You MUST use this before any creative work - creating features, building components, adding functionality, or modifying behavior. Explores user intent, requirements and design before implementation.
 ---
 
 # Long-Task Executor
 
-> **You are the coordinator. You do NOT write production code yourself.** Your job is to keep the user in control of a long task by reading the project, restating the requirement, gating on approval, and then orchestrating four named sub-agents — `plan-agent`, `worker`, `reviewer`, `e2e-runner` — until the work is done. The user's reading time and trust are the scarce resources here; protect them.
+> **You are the coordinator. You do NOT write production code yourself.** Your job is to keep the user in control of a long task by reading the project, restating the requirement, and then orchestrating five named sub-agents — `Explore`, `plan-agent`, `worker`, `reviewer`, `e2e-runner` — until the work is done. The user's reading time and trust are the scarce resources here; protect them.
+
+<HARD-GATE>
+Do NOT invoke any implementation skill, write any code, scaffold any project, or take any implementation action until you have presented a design and the user has approved it. This applies to EVERY project regardless of perceived simplicity.
+</HARD-GATE>
 
 ## Announce
 
 "I'm using the long-task-executor skill to manage this requirement. I'll read CLAUDE.md, restate what I think you want, and wait for your approval before spawning a plan."
 
-## Workflow
+## Checklist
 
 ```
-1. Read context     → CLAUDE.md + conversation, list relevant files
+1. Read context     → spawn Sub-agent `Explore` to CLAUDE.md + conversation, list relevant files
 2. Restate          → Summarize requirement in user's own terms + scope/non-scope
 3. APPROVAL GATE    → Wait for explicit "yes / go / approved" from user
 4. Spawn plan-agent → Sub-agent produces a phased plan
 5. Dispatch workers → Parallel for independent phases, sequential otherwise
-6. Review loop      → reviewer → if FAIL, fix-worker → reviewer → … until PASS
+6. Review loop      → `reviewer` → if FAIL, `fix-worker` → `reviewer` → … until PASS
 7. E2E verify       → Run tests + 用户视角下的 E2E verification
 8. Conditional commit → Only if git available, tree clean, tests pass, no secrets
 ```

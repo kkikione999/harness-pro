@@ -8,12 +8,14 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import time
 from pathlib import Path
 from typing import Any
+from urllib import request as urllib_request
 
 from mcp.server.fastmcp import FastMCP
 
-from utell_ios import persistence, ui_parser
+from utell_ios import config, persistence, ui_parser
 from utell_ios.bridge_client import IOSBridgeClient
 from utell_ios.preview_loader import (
     PreviewOrchestrator,
@@ -31,6 +33,7 @@ def _tool_error_guard(fn):
     """Decorator that catches exceptions and returns a standard error dict.
 
     Also checks for degraded-mode configuration before executing the tool.
+    Catches WDA connection errors and returns actionable guidance.
     """
     import functools
 
@@ -41,8 +44,13 @@ def _tool_error_guard(fn):
             return {"success": False, "error": config_error}
         try:
             return fn(*args, **kwargs)
+        except ConnectionError:
+            return _wda_down_error()
         except Exception as exc:
-            return {"success": False, "error": str(exc)}
+            msg = str(exc)
+            if _is_wda_connection_error(msg):
+                return _wda_down_error()
+            return {"success": False, "error": msg}
     return wrapper
 
 
@@ -66,6 +74,7 @@ def _build_error(
 
 _bridge: IOSBridgeClient | None = None
 _preview_orchestrator: PreviewOrchestrator | None = None
+_wda_process: subprocess.Popen | None = None
 
 
 def _get_bridge() -> IOSBridgeClient:
@@ -103,13 +112,38 @@ _wda_port: str = "8100"
 
 
 def _require_config() -> str | None:
-    """Return an error message if the server is in degraded mode, else None."""
-    if not _bundle_id:
-        return (
-            "utell-ios is not configured. Set UTELL_BUNDLE_ID in plugin settings "
-            "(e.g., via the plugin's userConfig or MCP env block) to enable iOS tools."
-        )
-    return None
+    """Return an error message if the server is in degraded mode, else None.
+
+    Tries three strategies to find a bundle ID:
+    1. In-memory value (from env var or prior auto-configure)
+    2. Persisted config from ``config.json``
+    3. Auto-detect from the current working directory
+    """
+    global _bundle_id, _bridge  # noqa: PLW0603
+
+    if _bundle_id:
+        return None
+
+    # Try loading persisted config
+    saved = config.load_config().get("projects", {})
+    if saved:
+        _bundle_id = next(iter(saved.values()))
+        _bridge = None
+        return None
+
+    # Auto-detect from current working directory
+    detected = config.detect_bundle_id(os.getcwd())
+    if detected:
+        config.set_bundle_id(os.getcwd(), detected)
+        _bundle_id = detected
+        _bridge = None
+        return None
+
+    return (
+        "utell-ios is not configured. Call ios_auto_configure(project_path) "
+        "with the path to your Xcode project directory, or set UTELL_BUNDLE_ID "
+        "in plugin settings."
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -128,23 +162,285 @@ def _check_platform() -> dict[str, Any]:
 
 
 # ---------------------------------------------------------------------------
+# WDA management helpers
+# ---------------------------------------------------------------------------
+
+_WDA_DOWN_INDICATORS = (
+    "connection refused",
+    "errno 61",
+    "code': 'connection'",
+    '"code": "connection"',
+    "could not connect",
+    "cannot connect",
+    "webdriveragent is not running",
+    "webdriveragent is not reachable",
+)
+
+
+def _is_wda_connection_error(msg: str) -> bool:
+    lower = msg.lower()
+    return any(ind in lower for ind in _WDA_DOWN_INDICATORS)
+
+
+def _wda_down_error() -> dict[str, Any]:
+    return {
+        "success": False,
+        "error": (
+            f"WebDriverAgent is not reachable at {_wda_host}:{_wda_port}. "
+            "Call ios_start_wda() to start it automatically, "
+            "or start it manually and ensure it listens on the correct port."
+        ),
+    }
+
+
+def _wda_is_reachable() -> bool:
+    try:
+        url = f"http://{_wda_host}:{_wda_port}/status"
+        req = urllib_request.Request(url, headers={"Accept": "application/json"})
+        with urllib_request.urlopen(req, timeout=3) as resp:
+            return resp.status == 200
+    except Exception:
+        return False
+
+
+def _find_wda_project() -> Path | None:
+    env_path = os.environ.get("UTELL_WDA_PATH", "")
+    if env_path:
+        p = Path(env_path)
+        if p.is_dir() and (p / "WebDriverAgent.xcodeproj").is_dir():
+            return p
+
+    home = Path.home()
+    candidates = [
+        home / ".javis" / "WebDriverAgent",
+        home / "WebDriverAgent",
+        Path("/usr/local/lib/node_modules/appium-webdriveragent/WebDriverAgent"),
+        Path("/opt/homebrew/lib/node_modules/appium-webdriveragent/WebDriverAgent"),
+    ]
+    for candidate in candidates:
+        if candidate.is_dir() and (candidate / "WebDriverAgent.xcodeproj").is_dir():
+            return candidate
+    return None
+
+
+# ---------------------------------------------------------------------------
 # Tool definitions
 # ---------------------------------------------------------------------------
 
 
 @mcp.tool()
-@_tool_error_guard
+def ios_auto_configure(project_path: str = "") -> dict[str, Any]:
+    """Auto-detect and persist the iOS bundle ID from an Xcode project.
+
+    Scans the given directory for ``.xcworkspace`` or ``.xcodeproj`` files,
+    extracts ``PRODUCT_BUNDLE_IDENTIFIER`` via ``xcodebuild``, and persists
+    the result.  After a successful call all other iOS tools will work
+    without further configuration — even across server restarts.
+
+    Args:
+        project_path: Absolute path to the directory containing the Xcode
+            project. Defaults to the current working directory.
+
+    Returns:
+        ``{"success": bool, "bundle_id": str | None, "project_path": str}``
+    """
+    global _bundle_id, _bridge  # noqa: PLW0603
+
+    path = project_path or os.getcwd()
+    if not Path(path).is_dir():
+        return {"success": False, "error": f"Directory not found: {path}", "bundle_id": None}
+
+    platform_check = _check_platform()
+    if not platform_check["supported"]:
+        return {"success": False, "error": "; ".join(platform_check["issues"]), "bundle_id": None}
+
+    bundle_id = config.detect_bundle_id(path)
+    if not bundle_id:
+        return {
+            "success": False,
+            "error": f"No Xcode project found or PRODUCT_BUNDLE_IDENTIFIER could not be resolved in: {path}",
+            "bundle_id": None,
+        }
+
+    config.set_bundle_id(path, bundle_id)
+    _bundle_id = bundle_id
+    _bridge = None  # force recreation with new bundle_id
+
+    return {"success": True, "bundle_id": bundle_id, "project_path": path}
+
+
+@mcp.tool()
 def ios_check_environment() -> dict[str, Any]:
     """Check whether the iOS automation environment is ready.
 
-    Verifies WebDriverAgent connectivity and returns its status.
+    Verifies platform support, configuration, and WebDriverAgent connectivity.
+    Unlike other tools, this works even when WDA is not running or the
+    bundle ID is not configured — it reports status rather than failing.
 
     Returns:
-        ``{"ready": bool, "wda_state": dict}``
+        ``{"success": True, "ready": bool, "platform": dict,
+         "configured": bool, "wda_reachable": bool}``
     """
-    bridge = _get_bridge()
-    result = bridge.health_check()
-    return {"success": True, "ready": result.get("ready", False), "wda_state": result}
+    platform_check = _check_platform()
+
+    # Trigger auto-configure (sets _bundle_id if an Xcode project is found)
+    config_ok = bool(_bundle_id)
+    if not config_ok:
+        _require_config()
+        config_ok = bool(_bundle_id)
+
+    wda_ok = _wda_is_reachable()
+
+    result: dict[str, Any] = {
+        "success": True,
+        "ready": platform_check["supported"] and config_ok and wda_ok,
+        "platform": platform_check,
+        "configured": config_ok,
+        "wda_reachable": wda_ok,
+    }
+    if not platform_check["supported"]:
+        result["platform_hint"] = "; ".join(platform_check["issues"])
+    if not config_ok:
+        result["config_hint"] = (
+            "Bundle ID not configured. Open an Xcode project directory "
+            "or call ios_auto_configure(project_path)."
+        )
+    if not wda_ok:
+        result["wda_hint"] = (
+            f"WebDriverAgent is not reachable at {_wda_host}:{_wda_port}. "
+            "Call ios_start_wda() to start it."
+        )
+    return result
+
+
+@mcp.tool()
+def ios_start_wda(wda_path: str = "") -> dict[str, Any]:
+    """Start WebDriverAgent on the booted iOS simulator.
+
+    Automatically finds the WebDriverAgent project if not specified.
+    Waits up to 60 seconds for WDA to become ready.
+
+    Args:
+        wda_path: Optional path to the WebDriverAgent directory containing
+            WebDriverAgent.xcodeproj. If omitted, searches common locations
+            and the ``UTELL_WDA_PATH`` environment variable.
+
+    Returns:
+        ``{"success": bool, "message": str, "log_path": str | None}``
+    """
+    global _wda_process
+
+    if _wda_is_reachable():
+        return {"success": True, "message": "WebDriverAgent is already running"}
+
+    # Find WDA project
+    if wda_path:
+        wda_dir = Path(wda_path)
+        if not wda_dir.is_dir():
+            return {"success": False, "error": f"Directory not found: {wda_path}"}
+    else:
+        wda_dir = _find_wda_project()
+
+    if not wda_dir:
+        return {
+            "success": False,
+            "error": (
+                "WebDriverAgent project not found. Set UTELL_WDA_PATH in plugin "
+                "settings or pass wda_path. Searched: ~/.javis/WebDriverAgent, "
+                "~/WebDriverAgent, npm global appium-webdriveragent"
+            ),
+        }
+
+    xcodeproj = wda_dir / "WebDriverAgent.xcodeproj"
+    if not xcodeproj.is_dir():
+        return {
+            "success": False,
+            "error": f"WebDriverAgent.xcodeproj not found in {wda_dir}",
+        }
+
+    # Kill previous managed process if any
+    if _wda_process is not None and _wda_process.poll() is None:
+        _wda_process.terminate()
+        try:
+            _wda_process.wait(timeout=5)
+        except subprocess.TimeoutExpired:
+            _wda_process.kill()
+
+    # Build and start WDA
+    destination = _get_simulator_destination()
+    derived_data = Path(tempfile.gettempdir()) / "utell_wda_build"
+    log_path = Path(tempfile.gettempdir()) / "utell_wda.log"
+
+    cmd = [
+        "xcodebuild", "test",
+        "-scheme", "WebDriverAgent",
+        "-project", str(xcodeproj),
+        "-destination", destination,
+        "-derivedDataPath", str(derived_data),
+    ]
+
+    log_file = open(log_path, "w")
+    _wda_process = subprocess.Popen(
+        cmd,
+        stdout=log_file,
+        stderr=subprocess.STDOUT,
+    )
+
+    # Wait for WDA to be ready (up to 60 seconds)
+    for _ in range(60):
+        time.sleep(1)
+        if _wda_process.poll() is not None:
+            return {
+                "success": False,
+                "error": (
+                    f"WDA process exited unexpectedly "
+                    f"(code {_wda_process.returncode}). "
+                    f"Check log: {log_path}"
+                ),
+                "log_path": str(log_path),
+            }
+        if _wda_is_reachable():
+            return {
+                "success": True,
+                "message": "WebDriverAgent started successfully",
+                "log_path": str(log_path),
+            }
+
+    return {
+        "success": False,
+        "error": (
+            f"WDA did not become ready within 60 seconds. "
+            f"The process is still running (PID {_wda_process.pid}). "
+            f"Check log: {log_path}"
+        ),
+        "log_path": str(log_path),
+    }
+
+
+@mcp.tool()
+def ios_stop_wda() -> dict[str, Any]:
+    """Stop the WebDriverAgent process started by ios_start_wda.
+
+    Note: This only stops WDA processes started via ios_start_wda.
+    Manually started WDA instances are not affected.
+
+    Returns:
+        ``{"success": bool, "message": str}``
+    """
+    global _wda_process
+
+    if _wda_process is None or _wda_process.poll() is not None:
+        return {"success": True, "message": "No managed WDA process is running"}
+
+    _wda_process.terminate()
+    try:
+        _wda_process.wait(timeout=5)
+    except subprocess.TimeoutExpired:
+        _wda_process.kill()
+        _wda_process.wait(timeout=3)
+
+    _wda_process = None
+    return {"success": True, "message": "WebDriverAgent stopped"}
 
 
 @mcp.tool()
@@ -840,6 +1136,19 @@ def ios_smoke_test(include_interaction: bool = False) -> dict[str, Any]:
 # ---------------------------------------------------------------------------
 
 
+def _clean_env(key: str, default: str) -> str:
+    """Read an env var, treating unresolved plugin template literals as unset."""
+    val = os.environ.get(key, default)
+    if val.startswith("${") and val.endswith("}"):
+        print(
+            f"[utell-ios] NOTE: {key} contains unresolved template '{val}', "
+            f"using default '{default}'",
+            file=sys.stderr,
+        )
+        return default
+    return val
+
+
 def main() -> None:
     """Start the utell-ios MCP server on stdio transport.
 
@@ -849,9 +1158,9 @@ def main() -> None:
     """
     global _bundle_id, _wda_host, _wda_port  # noqa: PLW0603
 
-    _bundle_id = os.environ.get("UTELL_BUNDLE_ID", "")
-    _wda_host = os.environ.get("UTELL_WDA_HOST", "127.0.0.1")
-    _wda_port = os.environ.get("UTELL_WDA_PORT", "8100")
+    _bundle_id = _clean_env("UTELL_BUNDLE_ID", "")
+    _wda_host = _clean_env("UTELL_WDA_HOST", "127.0.0.1")
+    _wda_port = _clean_env("UTELL_WDA_PORT", "8100")
 
     if not _bundle_id:
         print(

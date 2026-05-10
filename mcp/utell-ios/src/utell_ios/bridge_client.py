@@ -79,6 +79,11 @@ class IOSBridgeClient:
             if not sid:
                 sid = resp["value"].get("sessionId")
             self.session_id = sid
+        elif resp.get("code") == "connection":
+            raise ConnectionError(
+                f"Cannot connect to WebDriverAgent at {self.base_url}. "
+                "WebDriverAgent is not running or not reachable."
+            )
         return resp
 
     def delete_session(self) -> dict:
@@ -91,7 +96,13 @@ class IOSBridgeClient:
     def ensure_session(self) -> dict:
         if self.session_id:
             return {"status": "ok", "session_id": self.session_id}
-        return self.create_session()
+        result = self.create_session()
+        if self.session_id is None:
+            raise ConnectionError(
+                f"Cannot establish WDA session at {self.base_url}. "
+                "WebDriverAgent is not running or not reachable."
+            )
+        return result
 
     # -- Runtime state -------------------------------------------------------
 
