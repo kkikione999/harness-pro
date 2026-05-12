@@ -19,6 +19,7 @@ from utell_ios import config, persistence, ui_parser
 from utell_ios.bridge_client import IOSBridgeClient
 from utell_ios.preview_loader import (
     PreviewOrchestrator,
+    _build_xcodebuild_multi_platform,
     _get_simulator_destination,
     _resolve_xcode_flag,
     _save_screenshot,
@@ -763,14 +764,12 @@ def ios_build_and_install(
     shutil.rmtree(derived_data_path, ignore_errors=True)
 
     # -- Build -----------------------------------------------------------------
-    build_cmd: list[str] = [
-        "xcodebuild",
-        "build",
-        "-scheme", scheme,
-        "-destination", _get_simulator_destination(),
-        "-derivedDataPath", derived_data_path,
-        *xcode_flag,
-    ]
+    build_cmd: list[str] = _build_xcodebuild_multi_platform(
+        scheme=scheme,
+        xcode_flag=xcode_flag,
+        destination=_get_simulator_destination(),
+        derived_data_path=derived_data_path,
+    )
     build_result = subprocess.run(
         build_cmd,
         capture_output=True,

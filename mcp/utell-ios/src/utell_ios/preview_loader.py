@@ -73,6 +73,82 @@ def _fallback_simulator_destination() -> str:
     return "platform=iOS Simulator,name=iPhone 16"
 
 
+def _scheme_has_watchos_targets(scheme: str, xcode_flag: list[str]) -> bool:
+    """Detect whether the scheme contains watchOS targets by inspecting build settings."""
+    cmd = [
+        "xcodebuild", "-scheme", scheme,
+        "-showBuildSettings", *xcode_flag,
+    ]
+    result = subprocess.run(cmd, capture_output=True, text=True, check=False)
+    for line in result.stdout.splitlines():
+        if "SDKROOT" in line and "watchos" in line.lower():
+            return True
+        if "PLATFORM_NAME" in line and "watchos" in line.lower():
+            return True
+    return False
+
+
+def _get_watchos_simulator_destination() -> str:
+    """Find the first available watchOS simulator and return a destination string."""
+    try:
+        result = subprocess.run(
+            ["xcrun", "simctl", "list", "devices", "available", "-j"],
+            capture_output=True, text=True, check=False,
+        )
+        data = json.loads(result.stdout)
+        for runtime, devices in data.get("devices", {}).items():
+            if "watchOS" not in runtime:
+                continue
+            for device in devices:
+                if device.get("isAvailable"):
+                    name = device["name"]
+                    for part in runtime.split("."):
+                        if part.startswith("watchOS-"):
+                            ver = part[8:].replace("-", ".")
+                            return f"platform=watchOS Simulator,name={name},OS={ver}"
+    except Exception:
+        pass
+    return "platform=watchOS Simulator"
+
+
+def _build_xcodebuild_multi_platform(
+    scheme: str,
+    xcode_flag: list[str],
+    destination: str,
+    derived_data_path: str,
+    extra_args: list[str] | None = None,
+) -> list[str]:
+    """Build xcodebuild command with multi-platform (watchOS) handling.
+
+    Detects watchOS targets in the scheme and pre-builds them separately
+    before the main iOS build, preventing xcodebuild from failing when
+    it encounters watchOS destinations it cannot satisfy with a single
+    -destination flag.
+    """
+    has_watchos = _scheme_has_watchos_targets(scheme, xcode_flag)
+
+    if has_watchos:
+        watchos_cmd = [
+            "xcodebuild", "build",
+            "-scheme", scheme,
+            "-destination", _get_watchos_simulator_destination(),
+            "-derivedDataPath", derived_data_path,
+            *xcode_flag,
+            *(extra_args or []),
+        ]
+        subprocess.run(watchos_cmd, capture_output=True, text=True, check=False)
+
+    cmd = [
+        "xcodebuild", "build",
+        "-scheme", scheme,
+        "-destination", destination,
+        "-derivedDataPath", derived_data_path,
+        *xcode_flag,
+        *(extra_args or []),
+    ]
+    return cmd
+
+
 @dataclass
 class PreviewState:
     socket_path: str = ""
@@ -190,16 +266,17 @@ class PreviewOrchestrator:
 
         shutil.rmtree(_DERIVED_DATA_PATH, ignore_errors=True)
 
-        build_cmd = [
-            "xcodebuild", "build",
-            "-scheme", scheme,
-            "-destination", _get_simulator_destination(),
-            "-derivedDataPath", str(_DERIVED_DATA_PATH),
-            *xcode_flag,
-            "OTHER_SWIFT_FLAGS=-Xfrontend -enable-implicit-dynamic -Xfrontend -enable-private-imports",
-            "DEBUG_INFORMATION_FORMAT=dwarf",
-            'SWIFT_OPTIMIZATION_LEVEL=-Onone',
-        ]
+        build_cmd = _build_xcodebuild_multi_platform(
+            scheme=scheme,
+            xcode_flag=xcode_flag,
+            destination=_get_simulator_destination(),
+            derived_data_path=str(_DERIVED_DATA_PATH),
+            extra_args=[
+                "OTHER_SWIFT_FLAGS=-Xfrontend -enable-implicit-dynamic -Xfrontend -enable-private-imports",
+                "DEBUG_INFORMATION_FORMAT=dwarf",
+                "SWIFT_OPTIMIZATION_LEVEL=-Onone",
+            ],
+        )
 
         build_result = subprocess.run(
             build_cmd, capture_output=True, text=True, check=False,

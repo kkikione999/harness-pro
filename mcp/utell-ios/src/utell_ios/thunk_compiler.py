@@ -6,6 +6,7 @@ import json
 import platform
 import subprocess
 from dataclasses import dataclass
+from pathlib import Path
 
 
 @dataclass(frozen=True)
@@ -79,6 +80,15 @@ def _get_simulator_sdk_path() -> str:
     return _cached_sdk_path
 
 
+def discover_framework_search_paths(build_products_dir: str) -> list[str]:
+    """Find parent directories of .framework bundles for use with -F flags."""
+    products_path = Path(build_products_dir)
+    parent_dirs: set[str] = set()
+    for fw in products_path.glob("*.framework"):
+        parent_dirs.add(str(fw.parent))
+    return sorted(parent_dirs)
+
+
 def compile_thunk(
     thunk_source_path: str,
     output_dylib_path: str,
@@ -91,6 +101,10 @@ def compile_thunk(
 
     sdk_path = _get_simulator_sdk_path()
 
+    framework_flags: list[str] = []
+    for fw_dir in discover_framework_search_paths(build_products_dir):
+        framework_flags.extend(["-F", fw_dir])
+
     cmd = [
         "xcrun", "swiftc",
         "-target", f"{_get_host_arch()}-apple-ios{sdk_version}-simulator",
@@ -100,6 +114,7 @@ def compile_thunk(
         "-o", output_dylib_path,
         thunk_source_path,
         "-I", build_products_dir,
+        *framework_flags,
         "-Xfrontend", "-enable-private-imports",
         "-Xlinker", "-undefined",
         "-Xlinker", "dynamic_lookup",
