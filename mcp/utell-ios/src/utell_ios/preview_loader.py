@@ -73,13 +73,22 @@ def _fallback_simulator_destination() -> str:
     return "platform=iOS Simulator,name=iPhone 16"
 
 
+_cached_has_watchos: dict[str, bool] = {}
+
+
 def _scheme_has_watchos_targets(scheme: str, xcode_flag: list[str]) -> bool:
     """Detect whether the project contains watchOS targets.
 
     xcodebuild -scheme -showBuildSettings only returns settings for the
     scheme's primary target, so we enumerate all targets via ``-list`` and
     check each one individually for watchOS platform settings.
+
+    Result is cached per (scheme, xcode_flag) key for the session.
     """
+    cache_key = f"{scheme}:{':'.join(xcode_flag)}"
+    if cache_key in _cached_has_watchos:
+        return _cached_has_watchos[cache_key]
+
     # Step 1: enumerate all targets in the project
     list_cmd = ["xcodebuild", *xcode_flag, "-list"]
     list_result = subprocess.run(list_cmd, capture_output=True, text=True, check=False)
@@ -96,17 +105,23 @@ def _scheme_has_watchos_targets(scheme: str, xcode_flag: list[str]) -> bool:
                 break
             targets.append(stripped)
 
-    if not targets:
-        return False
+    result = False
+    if targets:
+        # Step 2: check each target's build settings for watchOS
+        for target in targets:
+            cmd = ["xcodebuild", "-target", target, *xcode_flag, "-showBuildSettings"]
+            settings_result = subprocess.run(cmd, capture_output=True, text=True, check=False)
+            for line in settings_result.stdout.splitlines():
+                parts = line.split("=", 1)
+                if len(parts) == 2 and parts[0].strip() == "PLATFORM_NAME":
+                    if parts[1].strip().lower() == "watchos":
+                        result = True
+                        break
+            if result:
+                break
 
-    # Step 2: check each target's build settings for watchOS
-    for target in targets:
-        cmd = ["xcodebuild", "-target", target, *xcode_flag, "-showBuildSettings"]
-        result = subprocess.run(cmd, capture_output=True, text=True, check=False)
-        for line in result.stdout.splitlines():
-            if "PLATFORM_NAME" in line and "watchos" in line.lower():
-                return True
-    return False
+    _cached_has_watchos[cache_key] = result
+    return result
 
 
 def _get_watchos_simulator_destination() -> str:
@@ -157,7 +172,15 @@ def _build_xcodebuild_multi_platform(
             *xcode_flag,
             *(extra_args or []),
         ]
-        subprocess.run(watchos_cmd, capture_output=True, text=True, check=False)
+        watchos_result = subprocess.run(watchos_cmd, capture_output=True, text=True, check=False)
+        if watchos_result.returncode != 0:
+            logger.warning(
+                "watchOS pre-build failed (rc=%d): %s",
+                watchos_result.returncode,
+                watchos_result.stderr[:500] if watchos_result.stderr else "",
+            )
+        else:
+            logger.info("watchOS pre-build succeeded")
 
     cmd = [
         "xcodebuild", "build",

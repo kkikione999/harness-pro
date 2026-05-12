@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from unittest.mock import MagicMock, patch
 
+import utell_ios.preview_loader as _pl_mod
 from utell_ios.preview_loader import (
     _build_xcodebuild_multi_platform,
     _scheme_has_watchos_targets,
@@ -23,6 +24,7 @@ class TestSchemeHasWatchosTargets:
         self, mock_run: MagicMock
     ) -> None:
         """ER2: Enumerates targets and detects watchOS in a target's settings."""
+        _pl_mod._cached_has_watchos.clear()
         # First call: xcodebuild -list
         list_result = MagicMock()
         list_result.stdout = "Targets:\n    MyApp\n    MyAppWatch\n\nSchemes:\n    MyApp\n"
@@ -46,6 +48,7 @@ class TestSchemeHasWatchosTargets:
         self, mock_run: MagicMock
     ) -> None:
         """ER4: Returns False for iOS-only projects."""
+        _pl_mod._cached_has_watchos.clear()
         # First call: xcodebuild -list
         list_result = MagicMock()
         list_result.stdout = "Targets:\n    MyApp\n    MyAppKit\n\nSchemes:\n    MyApp\n"
@@ -161,3 +164,53 @@ class TestBuildXcodebuildMultiPlatform:
         assert "DEBUG_INFORMATION_FORMAT=dwarf" in cmd
         assert "-project" in cmd
         assert "fake.xcodeproj" in cmd
+
+    @patch("utell_ios.preview_loader.subprocess.run")
+    @patch("utell_ios.preview_loader._scheme_has_watchos_targets", return_value=True)
+    @patch(
+        "utell_ios.preview_loader._get_watchos_simulator_destination",
+        return_value="platform=watchOS Simulator,name=Apple Watch",
+    )
+    def test_build_xcodebuild_multi_platform_watchos_failure_logged(
+        self,
+        mock_watchos_dest: MagicMock,
+        mock_has_watchos: MagicMock,
+        mock_run: MagicMock,
+    ) -> None:
+        """watchOS pre-build failure is logged, not raised."""
+        mock_run.return_value = MagicMock(returncode=1, stdout="", stderr="watchOS build error")
+
+        cmd = _build_xcodebuild_multi_platform(
+            scheme="MyScheme",
+            xcode_flag=["-project", "fake.xcodeproj"],
+            destination="platform=iOS Simulator,name=iPhone 16",
+            derived_data_path="/tmp/dd",
+        )
+
+        # iOS build command still returned
+        assert "-scheme" in cmd
+        assert cmd[cmd.index("-scheme") + 1] == "MyScheme"
+
+
+class TestSchemeHasWatchosTargetsCache:
+    """Tests for caching behavior in _scheme_has_watchos_targets."""
+
+    @patch("utell_ios.preview_loader.subprocess.run")
+    def test_cache_returns_cached_result_on_second_call(
+        self, mock_run: MagicMock
+    ) -> None:
+        """Second call returns cached result without subprocess calls."""
+        _pl_mod._cached_has_watchos.clear()
+        list_result = MagicMock()
+        list_result.stdout = "Targets:\n    MyApp\n\nSchemes:\n    MyApp\n"
+        ios_result = MagicMock()
+        ios_result.stdout = "    PLATFORM_NAME = iphoneos\n"
+        mock_run.side_effect = [list_result, ios_result]
+
+        result1 = _scheme_has_watchos_targets("MyApp", ["-project", "fake.xcodeproj"])
+        assert result1 is False
+        assert mock_run.call_count == 2
+
+        result2 = _scheme_has_watchos_targets("MyApp", ["-project", "fake.xcodeproj"])
+        assert result2 is False
+        assert mock_run.call_count == 2  # no new calls
