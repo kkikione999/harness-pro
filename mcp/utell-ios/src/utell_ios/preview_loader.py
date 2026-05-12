@@ -74,17 +74,38 @@ def _fallback_simulator_destination() -> str:
 
 
 def _scheme_has_watchos_targets(scheme: str, xcode_flag: list[str]) -> bool:
-    """Detect whether the scheme contains watchOS targets by inspecting build settings."""
-    cmd = [
-        "xcodebuild", "-scheme", scheme,
-        "-showBuildSettings", *xcode_flag,
-    ]
-    result = subprocess.run(cmd, capture_output=True, text=True, check=False)
-    for line in result.stdout.splitlines():
-        if "SDKROOT" in line and "watchos" in line.lower():
-            return True
-        if "PLATFORM_NAME" in line and "watchos" in line.lower():
-            return True
+    """Detect whether the project contains watchOS targets.
+
+    xcodebuild -scheme -showBuildSettings only returns settings for the
+    scheme's primary target, so we enumerate all targets via ``-list`` and
+    check each one individually for watchOS platform settings.
+    """
+    # Step 1: enumerate all targets in the project
+    list_cmd = ["xcodebuild", *xcode_flag, "-list"]
+    list_result = subprocess.run(list_cmd, capture_output=True, text=True, check=False)
+
+    targets: list[str] = []
+    in_targets = False
+    for line in list_result.stdout.splitlines():
+        stripped = line.strip()
+        if stripped == "Targets:":
+            in_targets = True
+            continue
+        if in_targets:
+            if not stripped or stripped.endswith(":"):
+                break
+            targets.append(stripped)
+
+    if not targets:
+        return False
+
+    # Step 2: check each target's build settings for watchOS
+    for target in targets:
+        cmd = ["xcodebuild", "-target", target, *xcode_flag, "-showBuildSettings"]
+        result = subprocess.run(cmd, capture_output=True, text=True, check=False)
+        for line in result.stdout.splitlines():
+            if "PLATFORM_NAME" in line and "watchos" in line.lower():
+                return True
     return False
 
 

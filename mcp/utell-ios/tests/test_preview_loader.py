@@ -22,25 +22,39 @@ class TestSchemeHasWatchosTargets:
     def test_scheme_has_watchos_targets_detects_watchos(
         self, mock_run: MagicMock
     ) -> None:
-        """ER2: Detects watchOS SDKROOT in build settings."""
-        mock_result = MagicMock()
-        mock_result.stdout = "    SDKROOT = watchos\n    PLATFORM_NAME = watchos\n"
-        mock_run.return_value = mock_result
+        """ER2: Enumerates targets and detects watchOS in a target's settings."""
+        # First call: xcodebuild -list
+        list_result = MagicMock()
+        list_result.stdout = "Targets:\n    MyApp\n    MyAppWatch\n\nSchemes:\n    MyApp\n"
+        # Second call: xcodebuild -target MyApp -showBuildSettings (iOS)
+        ios_result = MagicMock()
+        ios_result.stdout = "    PLATFORM_NAME = iphoneos\n"
+        # Third call: xcodebuild -target MyAppWatch -showBuildSettings (watchOS)
+        watchos_result = MagicMock()
+        watchos_result.stdout = "    PLATFORM_NAME = watchos\n"
+        mock_run.side_effect = [list_result, ios_result, watchos_result]
 
-        result = _scheme_has_watchos_targets("MyApp", [])
+        result = _scheme_has_watchos_targets("MyApp", ["-project", "fake.xcodeproj"])
 
         assert result is True
+        # First call should be -list
+        list_call = mock_run.call_args_list[0]
+        assert "-list" in list_call[0][0]
 
     @patch("utell_ios.preview_loader.subprocess.run")
     def test_scheme_has_watchos_targets_no_watchos(
         self, mock_run: MagicMock
     ) -> None:
-        """ER4: Returns False for iOS-only schemes."""
-        mock_result = MagicMock()
-        mock_result.stdout = "    SDKROOT = iphoneos\n    PLATFORM_NAME = iphoneos\n"
-        mock_run.return_value = mock_result
+        """ER4: Returns False for iOS-only projects."""
+        # First call: xcodebuild -list
+        list_result = MagicMock()
+        list_result.stdout = "Targets:\n    MyApp\n    MyAppKit\n\nSchemes:\n    MyApp\n"
+        # Subsequent calls: all iOS targets
+        ios_result = MagicMock()
+        ios_result.stdout = "    PLATFORM_NAME = iphoneos\n"
+        mock_run.side_effect = [list_result, ios_result, ios_result]
 
-        result = _scheme_has_watchos_targets("MyApp", [])
+        result = _scheme_has_watchos_targets("MyApp", ["-project", "fake.xcodeproj"])
 
         assert result is False
 
