@@ -1,16 +1,16 @@
-# Step 3 — Spawn the plan-agent
+# Step 2 — Spawn the plan-agent
 
 Goal: produce a phased plan without writing any production code yourself.
 
 ## Trigger
 
-Approval received in Step 2. Not before.
+RequirementArtifact loaded in Step 1. Not before.
 
 ## How to spawn
 
 Use the `Agent` tool with `subagent_type: "plan-agent"`. The spawn prompt should contain:
 
-- **Approved restatement** — the exact Goal / In scope / Out of scope / Done when block from Step 2
+- **RequirementArtifact** — the full normalized artifact from Step 1 (including format, source, and confidence level)
 - **Project root** — absolute path
 - **CLAUDE.md location** (if found) — so the plan-agent reads the same conventions you did
 - **Tech stack & test command** — what you discovered in Step 1
@@ -21,8 +21,8 @@ Example spawn prompt skeleton:
 ```
 You are the plan-agent. Load the agent definition at ./agents/plan-agent.md (plugin-bundled).
 
-# Approved requirement
-[paste the restatement block]
+# Requirement (normalized from [format])
+[paste the RequirementArtifact]
 
 # Project context
 - Root: /path/to/project
@@ -37,6 +37,33 @@ You are the plan-agent. Load the agent definition at ./agents/plan-agent.md (plu
 Produce a plan as specified in your agent definition. Return the plan path.
 ```
 
+## Handling missing acceptance criteria
+
+When the RequirementArtifact has `∅ to be inferred by plan-agent` for Scenarios or Expected Results, the spawn prompt must include an additional instruction:
+
+```
+# Acceptance Criteria Inference
+
+The requirement does not include structured Scenarios or Expected Results.
+As part of your plan, you MUST:
+
+1. Infer concrete, testable Done-when conditions from the requirement text.
+2. Write them as numbered assertions in the plan's "Acceptance Criteria" section.
+3. Each assertion must be:
+   - Specific enough to verify with a test or manual check
+   - Written in "X should Y" or "when A, then B" form
+   - Traceable to a specific part of the requirement
+
+These inferred conditions become the acceptance criteria for functional-test
+(Step 5) and E2E (Step 6). The reviewer (Step 4) will also check that the
+implementation satisfies them.
+
+Do NOT fabricate requirements that aren't implied by the original text.
+Infer only what is necessary to make the stated goals verifiable.
+```
+
+When BDD Scenarios DO exist, do NOT include this instruction — the BDD Scenarios ARE the acceptance criteria. The plan-agent should reference them, not redefine them.
+
 ## What you receive back
 
 A path to a plan file (the plan-agent writes it to disk so it survives across sub-agent boundaries). The plan should contain numbered phases, each with:
@@ -44,13 +71,15 @@ A path to a plan file (the plan-agent writes it to disk so it survives across su
 - Files to touch
 - Post-conditions (how you know the phase is done)
 - Dependencies on other phases (or "none")
+- **Acceptance Criteria** (inferred if not provided in BDD — only when applicable)
 
 ## What to do with the plan
 
 Read it yourself. Verify:
-- Every "Done when" condition from the approved restatement is covered
+- Every acceptance criterion from the RequirementArtifact is covered (explicit BDD Scenarios or inferred Done-when)
 - Out-of-scope items don't appear in any phase
 - Phase dependencies form a DAG, not a cycle
+- Inferred acceptance criteria are concrete and testable (not "works correctly")
 
 If the plan looks wrong, **don't fix it yourself** — re-spawn the plan-agent with feedback. The plan-agent owns plan content; you own plan acceptance.
 

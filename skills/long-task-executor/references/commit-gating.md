@@ -20,7 +20,7 @@ Before any worker runs (Step 1 or Step 4 entry), capture the dirty set:
 git status --porcelain > /tmp/long-task-pre.txt
 ```
 
-After all workers and the e2e-runner are done, compare:
+After all workers, the functional-tester, and the e2e-runner are done, compare:
 
 ```bash
 git status --porcelain > /tmp/long-task-post.txt
@@ -30,7 +30,12 @@ The acceptable post-state is: pre-state files (still dirty, still untracked) + t
 
 ### Gate 3 — Tests pass
 
-The e2e-runner's report from Step 6 must show test command exit code 0 (or however the project signals success). If the e2e-runner reported test failures and they were not subsequently fixed in another review-loop round, **don't commit**.
+Both the functional-tester (Step 5) and the e2e-runner (Step 6) must report PASS.
+
+- The functional-tester's report must show the test suite passed AND all verifiable Expected Results are satisfied.
+- The e2e-runner's report must show all BDD Scenarios executed successfully.
+
+If either reported FAIL and the failure was not subsequently fixed, **don't commit**.
 
 If no test command exists for the project, you cannot pass Gate 3 — surface that to the user: "I don't see a test command. I'm not going to auto-commit without one. Should I commit anyway, or do you want me to add a test first?"
 

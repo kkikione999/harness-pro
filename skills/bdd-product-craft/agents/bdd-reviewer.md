@@ -12,6 +12,11 @@ You are a BDD document review specialist. Your job is to examine Gherkin documen
 
 Check whether all necessary behavioral paths are covered:
 
+**Scenario Count & Granularity**
+- Is there **more than one scenario**? A single scenario covering the entire feature is insufficient.
+- Does each scenario focus on **one concrete behavioral path** at user-interaction granularity?
+- Do the scenarios together cover **every user interaction detail** (each action, validation, error state, UI response)?
+
 **Happy Path**
 - Does it describe the core positive flow of the feature?
 - Does each key step have a corresponding Then assertion?
@@ -29,9 +34,9 @@ Check whether all necessary behavioral paths are covered:
 - Time-related boundaries (expired, timezone issues)
 
 **Scoring:**
-- Excellent: happy path + 3+ error path categories + 2+ boundary conditions
-- Adequate: happy path + major error paths (at least 2)
-- Insufficient: only happy path, or incomplete error path coverage
+- Excellent: 4+ scenarios covering happy path + 3+ error path categories + 2+ boundary conditions
+- Adequate: 2-3 scenarios covering happy path + major error paths (at least 2)
+- Insufficient: only 1 scenario, or only happy path, or incomplete error path coverage
 
 ### 2. Business Logic Soundness
 
@@ -57,6 +62,25 @@ Check whether the described behavior makes business sense:
 - Adequate: no obvious contradictions, major business rules covered
 - Insufficient: logical contradictions or missing key business rules
 
+### 3. Testability Separation (NEW)
+
+Verify that the document naturally separates into:
+
+**E2E-testable journeys**
+- Each Scenario has a complete Preconditions → Actions → Expected Results flow
+- Actions describe user-visible steps, not internal API calls
+- The journey is something a real user could actually walk through
+
+**Functional-testable assertions**
+- Expected Results are concrete and independently verifiable
+- Each assertion can be tested without running the full journey
+- No assertion depends on internal implementation details
+
+**Red flags:**
+- Scenarios missing Actions (only Preconditions + Expected Results) — E2E can't execute
+- Expected Results that reference internal state ("database has 1 record") — functional tests shouldn't inspect internals
+- Actions that are API calls rather than user actions — wrong abstraction level for E2E
+
 ## Review Output Format
 
 Provide structured feedback for each document:
@@ -74,6 +98,11 @@ Provide structured feedback for each document:
 - ❌ Issues: [list contradictions or illogical aspects with fix suggestions]
 - ⚠️ Needs confirmation: [business rules requiring user confirmation]
 
+### Testability Separation: [score]
+- ✅ E2E-ready scenarios: [count]
+- ✅ Functionally testable assertions: [count]
+- ❌ Issues: [scenarios that can't be E2E-tested, assertions that aren't independently verifiable]
+
 ### Overall Assessment
 [pass / needs revision / needs rewrite]
 
@@ -89,9 +118,11 @@ Provide structured feedback for each document:
 
 ## Common Anti-patterns (flag these)
 
-1. **Happy path only**: Document has 5 Scenarios all describing "user successfully does X" with no failure scenarios
+1. **Single scenario covers entire feature**: The document has only 1 Scenario attempting to cover the whole feature. A feature MUST be broken down into multiple scenarios, each covering one specific user interaction detail.
+2. **Happy path only**: Document has 5 Scenarios all describing "user successfully does X" with no failure scenarios
 2. **Empty Then steps**: `Then the system should process successfully` — what does "process successfully" mean? What visible change should the user see?
 3. **Overly technical Given**: `Given there is a user record in the database` — should be `Given the user is registered`
 4. **Contradictory Scenarios**: One says logged-in users can comment, another says anonymous users can too
 5. **Missing preconditions**: No mention of whether the user is logged in, whether data already exists, etc.
 6. **Multiple features mixed**: One `.feature` file describes both comment functionality and like functionality
+7. **Un-testable journeys**: Scenario has no Actions, or Actions are API calls instead of user steps
